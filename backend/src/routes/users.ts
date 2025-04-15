@@ -11,8 +11,21 @@ router.get('/', async (req, res) => {
       .select('*');
 
     if (error) throw error;
-    res.json(data);
+
+    // Fetch metadata for each user
+    const usersWithMetadata = await Promise.all(
+      data.map(async (user) => {
+        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(user.id);
+        return {
+          ...user,
+          sender_names: authUser?.user_metadata?.sender_names || []
+        };
+      })
+    );
+
+    res.json(usersWithMetadata);
   } catch (error) {
+    console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -23,8 +36,17 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { email, role, gateway_id, sender_names } = req.body;
 
-    // Only include fields that are provided in the request
-    const updateData: any = { email, role, sender_names };
+    // Update user metadata if sender_names is provided
+    if (sender_names !== undefined) {
+      const { error: metadataError } = await supabase.auth.admin.updateUserById(
+        id,
+        { user_metadata: { sender_names } }
+      );
+      if (metadataError) throw metadataError;
+    }
+
+    // Update other fields in the users table
+    const updateData: any = { email, role };
     if (gateway_id !== undefined) {
       updateData.gateway_id = gateway_id;
     }
@@ -37,7 +59,13 @@ router.put('/:id', async (req, res) => {
       .single();
 
     if (error) throw error;
-    res.json(data);
+
+    // Return updated user with metadata
+    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(id);
+    res.json({
+      ...data,
+      sender_names: authUser?.user_metadata?.sender_names || []
+    });
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });

@@ -3,11 +3,17 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Send, Wallet } from 'lucide-react';
+import { Send, Wallet, Clock, MessageSquare, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PhoneInput from '../components/PhoneInput';
 import toast from 'react-hot-toast';
 import { Database } from '../types/supabase';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
 
 interface User {
   id: string;
@@ -15,6 +21,7 @@ interface User {
   credits: number;
   gateway_id: string | null;
   sender_names: string[];
+  role: string;
 }
 
 interface GatewayCredits {
@@ -33,6 +40,7 @@ type SendSMSForm = z.infer<typeof sendSMSSchema>;
 
 export default function SendSMS() {
   const [loading, setLoading] = useState(false);
+  const [messageLength, setMessageLength] = useState(0);
 
   const { data: user } = useQuery<User>({
     queryKey: ['user'],
@@ -42,33 +50,19 @@ export default function SendSMS() {
 
       const { data, error } = await supabase
         .from('users')
-        .select('credits, gateway_id')
+        .select('*')
         .eq('id', authUser.id)
         .single();
 
       if (error) throw error;
-
-      // Get sender names from the gateway
-      let senderNames: string[] = [];
-      if (data.gateway_id) {
-        const { data: gatewayData } = await supabase
-          .from('gateways')
-          .select('credentials')
-          .eq('id', data.gateway_id)
-          .single();
-
-        if (gatewayData?.credentials) {
-          const credentials = gatewayData.credentials as { sender_names?: string[] };
-          senderNames = credentials.sender_names || [];
-        }
-      }
 
       return { 
         id: authUser.id, 
         email: authUser.email || '',
         credits: Number(data.credits) || 0,
         gateway_id: data.gateway_id,
-        sender_names: senderNames
+        sender_names: data.sender_names || [],
+        role: data.role
       };
     }
   });
@@ -79,7 +73,7 @@ export default function SendSMS() {
       if (!user?.gateway_id) return null;
 
       const { data, error } = await supabase
-        .from('admin/gateways')
+        .from('gateways')
         .select(`
           id,
           name,
@@ -96,7 +90,7 @@ export default function SendSMS() {
     enabled: !!user?.gateway_id
   });
 
-  const { control, handleSubmit, reset } = useForm<SendSMSForm>({
+  const form = useForm<SendSMSForm>({
     resolver: zodResolver(sendSMSSchema),
     defaultValues: {
       sender_id: '',
@@ -129,7 +123,8 @@ export default function SendSMS() {
     },
     onSuccess: () => {
       toast.success('SMS scheduled successfully');
-      reset();
+      form.reset();
+      setMessageLength(0);
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to send SMS');
@@ -141,116 +136,173 @@ export default function SendSMS() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Credit Balance */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center space-x-3">
-          <Wallet className="h-6 w-6 text-green-500" />
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="space-y-6">
+        {/* Header Section */}
+        <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-sm font-medium text-gray-500">Your Credits</h3>
-            <p className="text-2xl font-bold text-gray-900">{user?.credits || 0}</p>
+            <h1 className="text-3xl font-bold text-gray-900">Send SMS</h1>
+            <p className="mt-2 text-gray-600">Send individual SMS messages to your contacts</p>
           </div>
+          
+          {/* Credit Balance Card */}
+          <Card className="w-[200px]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Available Credits
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{user?.credits || 0}</div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
 
-      {/* SMS Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="space-y-4">
-            <Controller
-              name="sender_id"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <div>
-                  <label htmlFor="sender_id" className="block text-sm font-medium text-gray-700">
-                    Sender ID
-                  </label>
-                  <select
-                    {...field}
-                    id="sender_id"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        {/* SMS Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Message Details</CardTitle>
+            <CardDescription>Fill in the details to send your message</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="sender_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sender ID</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a sender ID" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-white border rounded-md shadow-md">
+                          {user?.sender_names?.map((name) => (
+                            <SelectItem 
+                              key={name} 
+                              value={name}
+                              className="hover:bg-gray-100"
+                            >
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="recipient"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recipient</FormLabel>
+                      <FormControl>
+                        <PhoneInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={form.formState.errors.recipient?.message}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Message</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Textarea
+                            {...field}
+                            placeholder="Type your message here..."
+                            className="min-h-[120px]"
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setMessageLength(e.target.value.length);
+                            }}
+                          />
+                          <div className="absolute bottom-2 right-2 text-sm text-gray-500">
+                            {messageLength}/160
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="scheduledFor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Schedule (Optional)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type="datetime-local"
+                            {...field}
+                            className="pl-10"
+                          />
+                          <Clock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex items-center justify-between pt-4">
+                  <div className="text-sm text-gray-500 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Message will be sent using {gateway?.name || 'default'} gateway</span>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={loading || !user?.credits || user.credits <= 0}
+                    className="flex items-center gap-2"
                   >
-                    <option value="">Select Sender ID</option>
-                    {user?.sender_names?.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                  {error && <p className="mt-1 text-sm text-red-600">{error.message}</p>}
+                    {loading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>Send Message</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
-              )}
-            />
 
-            <Controller
-              name="recipient"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <div>
-                  <label htmlFor="recipient" className="block text-sm font-medium text-gray-700">
-                    Recipient
-                  </label>
-                  <PhoneInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    error={error?.message}
-                  />
-                  {error && <p className="mt-1 text-sm text-red-600">{error.message}</p>}
-                </div>
-              )}
-            />
-
-            <Controller
-              name="message"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                    Message
-                  </label>
-                  <textarea
-                    {...field}
-                    id="message"
-                    rows={4}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                  {error && <p className="mt-1 text-sm text-red-600">{error.message}</p>}
-                </div>
-              )}
-            />
-
-            <Controller
-              name="scheduledFor"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <div>
-                  <label htmlFor="scheduledFor" className="block text-sm font-medium text-gray-700">
-                    Schedule for (optional)
-                  </label>
-                  <input
-                    {...field}
-                    type="datetime-local"
-                    id="scheduledFor"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                  {error && <p className="mt-1 text-sm text-red-600">{error.message}</p>}
-                </div>
-              )}
-            />
-          </div>
-
-          <div className="mt-6">
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {loading ? 'Sending...' : 'Send SMS'}
-            </button>
-          </div>
-        </div>
-      </form>
+                {(!user?.credits || user.credits <= 0) && (
+                  <div className="mt-4 p-4 bg-yellow-50 rounded-lg flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-yellow-800">Insufficient Credits</h4>
+                      <p className="text-sm text-yellow-700">
+                        You need to have credits to send messages. Please purchase credits to continue.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
