@@ -46,12 +46,12 @@ export default function UserManagement() {
   const { data: gateways, isLoading: isLoadingGateways, error: gatewaysError } = useQuery({
     queryKey: ['gateways'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gateways')
+        const { data, error } = await supabase
+          .from('gateways')
         .select('*');
       
       if (error) throw error;
-      return data;
+        return data;
     },
     retry: 1
   });
@@ -123,10 +123,10 @@ export default function UserManagement() {
   };
 
   if (isLoadingUsers || isLoadingGateways) {
-    return (
+  return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+        </div>
     );
   }
 

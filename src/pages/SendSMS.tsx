@@ -150,6 +150,8 @@ export default function SendSMS() {
 
         // First create the message record
         console.log('Creating message record...');
+        const isScheduled = data.scheduledFor && new Date(data.scheduledFor) > new Date();
+        
         const { data: messageData, error: messageError } = await supabase
           .from('messages')
           .insert({
@@ -159,7 +161,7 @@ export default function SendSMS() {
             recipient: data.recipient,
             message: data.message,
             scheduled_for: data.scheduledFor ? new Date(data.scheduledFor).toISOString() : null,
-            status: 'pending'
+            status: isScheduled ? 'scheduled' : 'pending'
           })
           .select()
           .single();
@@ -174,7 +176,26 @@ export default function SendSMS() {
           throw new Error(`Failed to create message record: ${messageError.message}`);
         }
 
-        console.log('Message record created:', { messageId: messageData.id });
+        console.log('Message record created:', { 
+          messageId: messageData.id,
+          isScheduled,
+          scheduledFor: data.scheduledFor 
+        });
+
+        // If message is scheduled, don't send it immediately
+        if (isScheduled) {
+          toast.success('Message scheduled successfully!', {
+            duration: 3000,
+          style: {
+              background: '#10B981',
+            color: '#fff',
+          },
+        });
+          return true;
+        }
+
+        // For immediate messages, proceed with sending
+        console.log('Sending immediate message...');
 
         // Get auth session for Edge Function call
         console.log('Getting auth session...');
@@ -197,9 +218,9 @@ export default function SendSMS() {
         console.log('Edge Function URL:', edgeFunctionUrl);
 
         const payload = {
-          gateway_id: user.gateway_id,
+        gateway_id: user.gateway_id,
           sender_id: data.sender_id,
-          recipient: data.recipient,
+        recipient: data.recipient,
           message: data.message
         };
         console.log('Request payload:', payload);
@@ -225,7 +246,7 @@ export default function SendSMS() {
             throw new Error('Invalid response from server');
           }
 
-          if (!response.ok) {
+        if (!response.ok) {
             throw new Error(responseData.error || `HTTP error! status: ${response.status}`);
           }
 
@@ -311,7 +332,7 @@ export default function SendSMS() {
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex justify-between items-start">
-          <div>
+        <div>
             <h1 className="text-3xl font-bold text-gray-900">Send SMS</h1>
             <p className="mt-2 text-gray-600">Send individual SMS messages to your contacts</p>
           </div>
@@ -328,7 +349,7 @@ export default function SendSMS() {
               <div className="text-2xl font-bold text-gray-900">{user?.credits || 0}</div>
             </CardContent>
           </Card>
-        </div>
+      </div>
 
         {/* SMS Form */}
         <Card>
@@ -341,8 +362,8 @@ export default function SendSMS() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="sender_id"
-                  render={({ field }) => (
+              name="sender_id"
+              render={({ field }) => (
                     <FormItem>
                       <FormLabel>Sender ID</FormLabel>
                       <Select 
@@ -377,13 +398,13 @@ export default function SendSMS() {
 
                 <FormField
                   control={form.control}
-                  name="recipient"
-                  render={({ field }) => (
+            name="recipient"
+            render={({ field }) => (
                     <FormItem>
                       <FormLabel>Recipient</FormLabel>
                       <FormControl>
-                        <PhoneInput
-                          value={field.value}
+              <PhoneInput
+                value={field.value}
                           onChange={(value) => {
                             field.onChange(value);
                             // Save as user types
@@ -399,14 +420,14 @@ export default function SendSMS() {
 
                 <FormField
                   control={form.control}
-                  name="message"
-                  render={({ field }) => (
+            name="message"
+            render={({ field }) => (
                     <FormItem>
                       <FormLabel>Message</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Textarea
-                            {...field}
+                {...field}
                             placeholder="Type your message here..."
                             className="min-h-[120px]"
                             onChange={(e) => {
@@ -426,15 +447,15 @@ export default function SendSMS() {
 
                 <FormField
                   control={form.control}
-                  name="scheduledFor"
-                  render={({ field }) => (
+            name="scheduledFor"
+            render={({ field }) => (
                     <FormItem>
                       <FormLabel>Schedule (Optional)</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
-                            type="datetime-local"
-                            {...field}
+                type="datetime-local"
+                {...field}
                             className="pl-10"
                           />
                           <Clock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -445,11 +466,7 @@ export default function SendSMS() {
                   )}
                 />
 
-                <div className="flex items-center justify-between pt-4">
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Message will be sent using {gateway?.name || 'default'} gateway</span>
-                  </div>
+                <div className="flex items-center justify-end pt-4">
                   <Button 
                     type="submit" 
                     disabled={loading || !user?.credits || user.credits <= 0}
@@ -467,7 +484,7 @@ export default function SendSMS() {
                       </>
                     )}
                   </Button>
-                </div>
+        </div>
 
                 {(!user?.credits || user.credits <= 0) && (
                   <div className="mt-4 p-4 bg-yellow-50 rounded-lg flex items-start gap-3">
@@ -480,7 +497,7 @@ export default function SendSMS() {
                     </div>
                   </div>
                 )}
-              </form>
+      </form>
             </Form>
           </CardContent>
         </Card>

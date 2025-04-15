@@ -5,6 +5,8 @@ import rateLimit from 'express-rate-limit';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import usersRouter from './routes/users';
+import { messageScheduler } from './services/scheduler';
+import routes from './routes';
 
 // Load environment variables
 dotenv.config();
@@ -79,6 +81,23 @@ const authenticateAdmin: RequestHandler = async (req, res, next) => {
 
 // Routes
 app.use('/api/users', authenticateAdmin, usersRouter);
+app.use('/', routes);
+
+// Start the message scheduler when the server starts
+messageScheduler.start();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  messageScheduler.stop();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  messageScheduler.stop();
+  process.exit(0);
+});
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
