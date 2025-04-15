@@ -13,15 +13,18 @@
   "dependencies": {
     "@headlessui/react": "^2.2.1",
     "@hookform/resolvers": "^5.0.1",
+    "@radix-ui/react-select": "^2.1.7",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.28.4",
     "chart.js": "^4.4.8",
+    "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.2.0",
     "i18next-http-backend": "^3.0.2",
     "libphonenumber-js": "^1.12.6",
     "lucide-react": "^0.488.0",
+    "netlify-cms": "^2.10.192",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^18.2.0",
@@ -29,6 +32,8 @@
     "react-hot-toast": "^2.4.1",
     "react-i18next": "^14.1.0",
     "react-router-dom": "^6.22.3",
+    "sonner": "^2.0.3",
+    "tailwind-merge": "^3.2.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

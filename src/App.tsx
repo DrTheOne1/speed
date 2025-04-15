@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import UserRoute from './components/UserRoute';
+import AdminCMS from './pages/admin/AdminCMS';
 
 // User pages
 import Dashboard from './pages/Dashboard';
@@ -64,6 +65,7 @@ function App() {
                     <Route path="/admin/payment-methods" element={<PaymentMethods />} />
                     <Route path="/admin/subscription-plans" element={<SubscriptionPlans />} />
                     <Route path="/admin/messages" element={<AdminMessages />} />
+                    <Route path="/admin/cms" element={<AdminCMS />} />
                   </Route>
 
                   {/* User routes */}
