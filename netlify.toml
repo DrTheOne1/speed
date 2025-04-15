@@ -7,12 +7,6 @@
   to = "/admin/index.html"
   status = 200
 
-[[plugins]]
-  package = "@netlify/plugin-gatsby"
-
-[build.environment]
-  GATSBY_TELEMETRY_DISABLED = "1"
-
 [[headers]]
   for = "/*"
     [headers.values]
