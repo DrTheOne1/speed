@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,7 +7,6 @@ import { Send, Wallet, Clock, MessageSquare, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PhoneInput from '../components/PhoneInput';
 import toast from 'react-hot-toast';
-import { Database } from '../types/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -41,6 +40,28 @@ type SendSMSForm = z.infer<typeof sendSMSSchema>;
 export default function SendSMS() {
   const [loading, setLoading] = useState(false);
   const [messageLength, setMessageLength] = useState(0);
+
+  // Get the last used phone number from local storage
+  const getLastPhoneNumber = () => {
+    const savedNumber = localStorage.getItem('lastPhoneNumber');
+    return savedNumber || '';
+  };
+
+  // Save phone number to local storage
+  const savePhoneNumber = (number: string) => {
+    localStorage.setItem('lastPhoneNumber', number);
+  };
+
+  // Get the last used sender ID from local storage
+  const getLastSenderId = () => {
+    const savedSenderId = localStorage.getItem('lastSenderId');
+    return savedSenderId || '';
+  };
+
+  // Save sender ID to local storage
+  const saveSenderId = (senderId: string) => {
+    localStorage.setItem('lastSenderId', senderId);
+  };
 
   const { data: user } = useQuery<User>({
     queryKey: ['user'],
@@ -93,41 +114,191 @@ export default function SendSMS() {
   const form = useForm<SendSMSForm>({
     resolver: zodResolver(sendSMSSchema),
     defaultValues: {
-      sender_id: '',
-      recipient: '',
+      sender_id: getLastSenderId(), // Set initial value from storage
+      recipient: getLastPhoneNumber(),
       message: '',
       scheduledFor: undefined,
     },
   });
 
+  const queryClient = useQueryClient();
+
   const sendSMSMutation = useMutation({
     mutationFn: async (data: SendSMSForm) => {
       setLoading(true);
       try {
-        const { error } = await supabase
+        console.log('Starting message send process...', {
+          recipient: data.recipient,
+          sender_id: data.sender_id,
+          hasMessage: !!data.message,
+          user_id: user?.id,
+          gateway_id: user?.gateway_id
+        });
+
+        // Validate user credits
+        if (!user?.credits || user.credits <= 0) {
+          console.error('Credit validation failed:', {
+            currentCredits: user?.credits,
+            userId: user?.id
+          });
+          throw new Error('Insufficient credits. Please purchase more credits to send messages.');
+        }
+
+        // Save form data to local storage
+        savePhoneNumber(data.recipient);
+        saveSenderId(data.sender_id);
+
+        // First create the message record
+        console.log('Creating message record...');
+        const { data: messageData, error: messageError } = await supabase
           .from('messages')
           .insert({
+            user_id: user.id,
+            gateway_id: user.gateway_id,
             sender_id: data.sender_id,
             recipient: data.recipient,
             message: data.message,
             scheduled_for: data.scheduledFor ? new Date(data.scheduledFor).toISOString() : null,
-            user_id: user?.id,
-            status: 'pending',
-          } as Database['public']['Tables']['messages']['Insert']);
+            status: 'pending'
+          })
+          .select()
+          .single();
 
-        if (error) throw error;
-        return true;
+        if (messageError) {
+          console.error('Database error creating message:', {
+            error: messageError,
+            code: messageError.code,
+            details: messageError.details,
+            hint: messageError.hint
+          });
+          throw new Error(`Failed to create message record: ${messageError.message}`);
+        }
+
+        console.log('Message record created:', { messageId: messageData.id });
+
+        // Get auth session for Edge Function call
+        console.log('Getting auth session...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw new Error('Authentication error: Failed to get session');
+        }
+        
+        if (!session?.access_token) {
+          console.error('No access token in session');
+          throw new Error('Authentication error: No access token found');
+        }
+
+        // Send message using Edge Function
+        console.log('Calling Edge Function to send message...');
+        const endpoint = 'send-twilio-sms'; // Use the same endpoint as TestSMS
+        const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`;
+        console.log('Edge Function URL:', edgeFunctionUrl);
+
+        const payload = {
+          gateway_id: user.gateway_id,
+          sender_id: data.sender_id,
+          recipient: data.recipient,
+          message: data.message
+        };
+        console.log('Request payload:', payload);
+
+        try {
+          const response = await fetch(edgeFunctionUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          console.log('Edge Function response status:', response.status);
+          let responseData;
+          const responseText = await response.text();
+          try {
+            responseData = JSON.parse(responseText);
+            console.log('Edge Function response:', responseData);
+          } catch (e) {
+            console.error('Failed to parse response:', responseText);
+            throw new Error('Invalid response from server');
+          }
+
+          if (!response.ok) {
+            throw new Error(responseData.error || `HTTP error! status: ${response.status}`);
+          }
+
+          // Deduct credit after successful send
+          console.log('Deducting credit...');
+          const { error: creditError } = await supabase
+            .from('users')
+            .update({ 
+              credits: (user.credits - 1) 
+            })
+            .eq('id', user.id);
+
+          if (creditError) {
+            console.error('Error updating credits:', {
+              error: creditError,
+              code: creditError.code,
+              details: creditError.details
+            });
+            throw new Error(`Failed to update credits: ${creditError.message}`);
+          }
+
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['user'] });
+          console.log('Message sent successfully!');
+
+          return true;
+        } catch (fetchError: any) {
+          console.error('Edge Function error:', {
+            error: fetchError,
+            message: fetchError.message,
+            url: edgeFunctionUrl,
+            status: fetchError.status,
+            statusText: fetchError.statusText
+          });
+          throw new Error(`Edge Function error: ${fetchError.message}`);
+        }
+      } catch (err: any) {
+        console.error('Send message process failed:', {
+          error: err,
+          message: err.message,
+          stack: err.stack,
+          type: err.constructor.name
+        });
+        throw new Error(err.message || 'Failed to send message');
       } finally {
         setLoading(false);
       }
     },
     onSuccess: () => {
-      toast.success('SMS scheduled successfully');
+      toast.success('Message sent successfully!', {
+        duration: 3000,
+        style: {
+          background: '#10B981',
+          color: '#fff',
+        },
+      });
       form.reset();
       setMessageLength(0);
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to send SMS');
+    onError: (error: Error) => {
+      const errorMessage = error.message || 'Failed to send message';
+      console.error('Error in mutation:', {
+        error,
+        message: errorMessage,
+        stack: error.stack
+      });
+      toast.error(errorMessage, {
+        duration: 5000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      });
     },
   });
 
@@ -174,7 +345,14 @@ export default function SendSMS() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Sender ID</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Save sender ID when selected
+                          saveSenderId(value);
+                        }} 
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a sender ID" />
@@ -206,7 +384,11 @@ export default function SendSMS() {
                       <FormControl>
                         <PhoneInput
                           value={field.value}
-                          onChange={field.onChange}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            // Save as user types
+                            savePhoneNumber(value);
+                          }}
                           error={form.formState.errors.recipient?.message}
                         />
                       </FormControl>
