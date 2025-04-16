@@ -1,36 +1,42 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React from 'react';
+import toast from 'react-hot-toast';
 
-interface Props {
-  children: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error: Error | null;
-}
-
-class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+export class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null
-    };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error
-    };
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
-  render(): ReactNode {
+  componentDidCatch(error: Error) {
+    console.error('Error caught by boundary:', error);
+    toast.error('Something went wrong');
+  }
+
+  render() {
     if (this.state.hasError) {
       return (
-        <div className="p-4 rounded-md bg-red-50">
-          <h2 className="text-lg font-semibold text-red-800">Something went wrong</h2>
-          <p className="mt-2 text-sm text-red-600">{this.state.error?.message}</p>
+        <div className="rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Something went wrong</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>Please try refreshing the page</p>
+              </div>
+              <button
+                onClick={() => this.setState({ hasError: false })}
+                className="mt-4 rounded-md bg-red-100 px-3 py-2 text-sm font-semibold text-red-700"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
@@ -38,5 +44,3 @@ class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-export default ErrorBoundary;

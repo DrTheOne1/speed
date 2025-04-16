@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { logger } from '../../utils/logger';
-import { Search, Filter, Download, MessageSquare, RefreshCw, X } from 'lucide-react';
+import { Search, Filter, Download, MessageSquare, RefreshCw, X, Trash2, Copy, Send, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Message {
@@ -29,34 +29,141 @@ export default function Messages() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [pageSize, setPageSize] = useState(10);
+
+  // Add filter states
+  const [gatewayFilter, setGatewayFilter] = useState('all');
+  const [userFilter, setUserFilter] = useState('all');
+
+  // Add auto-refresh functionality
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const AUTO_REFRESH_INTERVAL = 30000; // 30 seconds
+
+  // Add after existing state declarations
+  const [isExporting, setIsExporting] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Message;
+    direction: 'asc' | 'desc';
+  }>({ key: 'created_at', direction: 'desc' });
+  const [visibleColumns, setVisibleColumns] = useState<Set<keyof Message>>(new Set([
+    'message', 'recipient', 'status', 'user_email', 'gateway_name', 'created_at'
+  ]));
+  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(false);
+  const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
-  const handleExport = () => {
-    if (!messages?.length) return;
+  const deleteMessagesMutation = useMutation({
+    mutationFn: async (messageIds: string[]) => {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .in('id', messageIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-messages'] });
+      setSelectedRows(new Set());
+      toast.success('Messages deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete messages');
+    }
+  });
 
-    const csvData = messages.map(message => ({
-      Message: message.message,
-      Recipient: message.recipient,
-      Status: message.status,
-      User: message.user_email || 'N/A',
-      Gateway: message.gateway_name || 'N/A',
-      'Created At': format(new Date(message.created_at), 'yyyy-MM-dd HH:mm:ss')
-    }));
+  const resendMessagesMutation = useMutation({
+    mutationFn: async (messageIds: string[]) => {
+      const { error } = await supabase
+        .rpc('resend_messages', { message_ids: messageIds });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-messages'] });
+      toast.success('Messages queued for resend');
+    }
+  });
 
-    const csvString = [
-      Object.keys(csvData[0]).join(','),
-      ...csvData.map(row => Object.values(row).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvString], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `messages-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const handleCopyContent = (content: string) => {
+    navigator.clipboard.writeText(content)
+      .then(() => toast.success('Copied to clipboard'))
+      .catch(() => toast.error('Failed to copy'));
   };
+
+  const handleExport = async () => {
+    if (!messages?.length) return;
+    
+    try {
+      setIsExporting(true);
+      
+      // Add BOM for UTF-8
+      const BOM = '\uFEFF';
+      
+      // Properly escape and encode data
+      const csvData = messages.map(message => ({
+        Message: `"${(message.message || '').replace(/"/g, '""')}"`,
+        Recipient: `"${(message.recipient || '').replace(/"/g, '""')}"`,
+        Status: message.status,
+        User: message.user_email || 'N/A',
+        Gateway: message.gateway_name || 'N/A',
+        'Created At': format(new Date(message.created_at), 'yyyy-MM-dd HH:mm:ss')
+      }));
+
+      const headers = Object.keys(csvData[0]);
+      const rows = csvData.map(row => 
+        Object.values(row)
+          .map(value => String(value).replace(/\n/g, ' ')) // Replace newlines
+          .join(',')
+      );
+
+      const csvString = BOM + [
+        headers.join(','),
+        ...rows
+      ].join('\n');
+
+      // Create blob with UTF-8 encoding
+      const blob = new Blob([csvString], { 
+        type: 'text/csv;charset=utf-8'
+      });
+
+      // Download file
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `messages-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Export completed successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export messages');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Add bulk action handlers
+  const handleBulkDelete = async (ids: string[]) => {
+    // Implementation
+  };
+  const handleBulkExport = (ids: string[]) => {
+    // Implementation
+  };
+
+  // Add after mutation declarations
+  useEffect(() => {
+    if (!isAutoRefreshEnabled) return;
+    
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['admin-messages'] });
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [isAutoRefreshEnabled, queryClient]);
 
   // Check database connection first
   useEffect(() => {
@@ -80,6 +187,19 @@ export default function Messages() {
     };
 
     checkDatabaseConnection();
+  }, []);
+
+  // Add after other useEffect hooks
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.querySelector('[role="menu"]');
+      if (dropdown && !dropdown.contains(event.target as Node)) {
+        setIsColumnDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const { data: messages, isLoading, error } = useQuery<Message[]>({
@@ -218,11 +338,63 @@ export default function Messages() {
         <div className="sm:flex-none">
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+            disabled={isExporting}
+            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
           >
-            <Download className="h-4 w-4" />
-            Export
+            {isExporting ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Export
+              </>
+            )}
           </button>
+        </div>
+        <div className="relative ml-2">
+          <button
+            type="button"
+            onClick={() => setIsColumnDropdownOpen(!isColumnDropdownOpen)}
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+          >
+            <Filter className="h-4 w-4" />
+            Columns
+          </button>
+          {isColumnDropdownOpen && (
+            <div 
+              className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              role="menu"
+            >
+              <div className="py-1">
+                {Object.keys(messages?.[0] || {}).map(key => (
+                  <div
+                    key={key}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => {
+                      const newColumns = new Set(visibleColumns);
+                      if (newColumns.has(key as keyof Message)) {
+                        newColumns.delete(key as keyof Message);
+                      } else {
+                        newColumns.add(key as keyof Message);
+                      }
+                      setVisibleColumns(newColumns);
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns.has(key as keyof Message)}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+                      readOnly
+                    />
+                    <span className="ml-3">{key}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -278,7 +450,41 @@ export default function Messages() {
           <RefreshCw className="h-4 w-4" />
           Refresh
         </button>
+        <button
+          onClick={() => setIsAutoRefreshEnabled(!isAutoRefreshEnabled)}
+          className={`
+            inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-semibold
+            ${isAutoRefreshEnabled ? 'bg-indigo-100 text-indigo-700' : 'text-gray-900'}
+          `}
+        >
+          <Clock className="h-4 w-4" />
+          {isAutoRefreshEnabled ? 'Auto-refresh On' : 'Auto-refresh Off'}
+        </button>
       </div>
+
+      {selectedRows.size > 0 && (
+        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-700">
+              {selectedRows.size} selected
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (confirm(`Delete ${selectedRows.size} messages?`)) {
+                    deleteMessagesMutation.mutate(Array.from(selectedRows));
+                  }
+                }}
+                disabled={deleteMessagesMutation.isPending}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleteMessagesMutation.isPending ? 'Deleting...' : 'Delete Selected'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-8 flow-root">
         <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -287,6 +493,20 @@ export default function Messages() {
               <table className="min-w-full divide-y divide-gray-300">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th scope="col" className="relative px-6 sm:w-16 sm:px-8">
+                      <input
+                        type="checkbox"
+                        className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300"
+                        checked={messages?.length === selectedRows.size}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRows(new Set(messages?.map(m => m.id)));
+                          } else {
+                            setSelectedRows(new Set());
+                          }
+                        }}
+                      />
+                    </th>
                     <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
                       Message
                     </th>
@@ -305,18 +525,21 @@ export default function Messages() {
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                       Date
                     </th>
+                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={6} className="py-4 text-center text-sm text-gray-500">
+                      <td colSpan={8} className="py-4 text-center text-sm text-gray-500">
                         Loading messages...
                       </td>
                     </tr>
                   ) : messages?.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-4 text-center text-sm text-gray-500">
+                      <td colSpan={8} className="py-4 text-center text-sm text-gray-500">
                         No messages found
                       </td>
                     </tr>
@@ -329,6 +552,23 @@ export default function Messages() {
                           onClick={() => setSelectedMessage(message)}
                           className="cursor-pointer hover:bg-gray-50"
                         >
+                          <td className="relative px-6 sm:w-16 sm:px-8">
+                            <input
+                              type="checkbox"
+                              className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300"
+                              checked={selectedRows.has(message.id)}
+                              onChange={(e) => {
+                                const newSelected = new Set(selectedRows);
+                                if (e.target.checked) {
+                                  newSelected.add(message.id);
+                                } else {
+                                  newSelected.delete(message.id);
+                                }
+                                setSelectedRows(newSelected);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                             <div className="flex items-center">
                               <MessageSquare className="h-5 w-5 mr-2 text-gray-400" />
@@ -356,6 +596,21 @@ export default function Messages() {
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
+                          </td>
+                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Are you sure you want to delete this message?')) {
+                                  deleteMessagesMutation.mutate([message.id]);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-900 p-2 rounded-md hover:bg-red-50"
+                              title="Delete message"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete message</span>
+                            </button>
                           </td>
                         </tr>
                       ))

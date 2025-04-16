@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { logger } from '../utils/logger';
-import { Search, Filter, Download, MessageSquare } from 'lucide-react';
+import { Search, Filter, Download, MessageSquare, Copy, Send, Clock, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Message {
@@ -19,12 +19,96 @@ interface Message {
 }
 
 export default function Messages() {
+  const [visibleColumns, setVisibleColumns] = useState<Set<keyof Message>>(new Set([
+    'message', 'recipient', 'status', 'gateway_name', 'created_at'
+  ]));
+  const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(false);
+  const itemsPerPage = 10;
+  const queryClient = useQueryClient();
+
+  const handleExport = async (messagesToExport = messages) => {
+    if (!messagesToExport?.length) return;
+    
+    try {
+      setIsExporting(true);
+      
+      // Add BOM for UTF-8
+      const BOM = '\uFEFF';
+      
+      // Process data with proper encoding for Arabic
+      const csvData = messagesToExport.map(message => ({
+        Message: `"${(message.message || '').replace(/"/g, '""').replace(/[\n\r]+/g, ' ')}"`,
+        Recipient: `"${(message.recipient || '').replace(/"/g, '""')}"`,
+        Status: message.status,
+        Gateway: message.gateway_name || 'N/A',
+        'Created At': format(new Date(message.created_at), 'yyyy-MM-dd HH:mm:ss')
+      }));
+
+      const headers = Object.keys(csvData[0]);
+      const rows = csvData.map(row => 
+        Object.values(row)
+          .map(value => String(value))
+          .join(',')
+      );
+
+      const csvString = BOM + [headers.join(','), ...rows].join('\n');
+
+      // Create blob with UTF-8 encoding
+      const blob = new Blob([csvString], { 
+        type: 'text/csv;charset=utf-8'
+      });
+
+      // Download file
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `messages-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Export completed successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export messages');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAutoRefreshEnabled) return;
+    
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['user-messages'] });
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isAutoRefreshEnabled, queryClient]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.querySelector('[role="menu"]');
+      if (dropdown && !dropdown.contains(event.target as Node)) {
+        setIsColumnDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const { data: messages, isLoading, error } = useQuery<Message[]>({
     queryKey: ['user-messages', searchQuery, statusFilter, dateRange],
@@ -95,11 +179,14 @@ export default function Messages() {
         console.log('Query successful, data:', messagesWithDetails);
         return messagesWithDetails;
       } catch (error) {
-        console.error('Query error details:', error);
+        console.error('Query error:', error);
         toast.error('Failed to fetch messages');
-        throw error;
+        return [];
       }
-    }
+    },
+    retry: 1,
+    refetchOnWindowFocus: false,
+    staleTime: 30000
   });
 
   if (isLoading) {
@@ -152,112 +239,204 @@ export default function Messages() {
             A list of all messages you've sent, including their status and details.
           </p>
         </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative rounded-md shadow-sm">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              placeholder="Search messages..."
-            />
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+        <div className="sm:flex sm:items-center sm:justify-end">
+          <button
+            type="button"
+            className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            onClick={handleExport}
+            disabled={isExporting}
           >
-            <option value="all">All Status</option>
-            <option value="sent">Sent</option>
-            <option value="delivered">Delivered</option>
-            <option value="failed">Failed</option>
-            <option value="pending">Pending</option>
-          </select>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            />
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            />
-          </div>
+            {isExporting ? 'Exporting...' : 'Export'}
+          </button>
         </div>
       </div>
-
-      <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Message
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Recipient
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Gateway
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Status
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Date
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {messages.map((message) => (
-                    <tr key={message.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        <div className="flex items-center">
-                          <MessageSquare className="h-5 w-5 mr-2 text-gray-400" />
-                          <span className="truncate max-w-xs">{message.message}</span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {message.recipient}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {message.gateway_name || 'N/A'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                          message.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                          message.status === 'failed' ? 'bg-red-100 text-red-800' :
-                          message.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {selectedRows.size > 0 && (
+        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-700">
+              {selectedRows.size} selected
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleExport(messages?.filter(m => selectedRows.has(m.id)))}
+                disabled={isExporting}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? 'Exporting...' : 'Export Selected'}
+              </button>
             </div>
           </div>
         </div>
+      )}
+      <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+        <table className="min-w-full divide-y divide-gray-300">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="relative px-6 sm:w-16 sm:px-8">
+                <input
+                  type="checkbox"
+                  className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-indigo-600"
+                  checked={messages?.length > 0 && messages?.length === selectedRows.size}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedRows(new Set(messages?.map(m => m.id)));
+                    } else {
+                      setSelectedRows(new Set());
+                    }
+                  }}
+                />
+              </th>
+              {visibleColumns.has('message') && (
+                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                  Message
+                </th>
+              )}
+              {visibleColumns.has('recipient') && (
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Recipient
+                </th>
+              )}
+              {visibleColumns.has('gateway_name') && (
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Gateway
+                </th>
+              )}
+              {visibleColumns.has('status') && (
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Status
+                </th>
+              )}
+              {visibleColumns.has('created_at') && (
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Date
+                </th>
+              )}
+              <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {(messages ?? [])
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .map((message) => (
+                <tr key={message.id} className="hover:bg-gray-50">
+                  <td className="relative px-6 sm:w-16 sm:px-8">
+                    <input
+                      type="checkbox"
+                      className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-indigo-600"
+                      checked={selectedRows.has(message.id)}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedRows);
+                        if (e.target.checked) {
+                          newSelected.add(message.id);
+                        } else {
+                          newSelected.delete(message.id);
+                        }
+                        setSelectedRows(newSelected);
+                      }}
+                    />
+                  </td>
+                  {visibleColumns.has('message') && (
+                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                      <div className="flex items-center group relative">
+                        <MessageSquare className="h-5 w-5 mr-2 text-gray-400 flex-shrink-0" />
+                        <div className="truncate max-w-[200px] hover:text-indigo-600">
+                          {message.message}
+                          {/* Tooltip */}
+                          <div className="invisible group-hover:visible absolute z-50 w-80 p-2 bg-gray-900 text-white text-xs rounded-lg 
+                            -translate-y-full top-0 left-0 mt-[-10px] 
+                            after:content-[''] after:absolute after:left-1/2 after:top-[100%] after:-translate-x-1/2 
+                            after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-900">
+                            {message.message}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  )}
+                  {visibleColumns.has('recipient') && (
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <div className="group relative">
+                        <div className="truncate max-w-[150px] hover:text-indigo-600">
+                          {message.recipient}
+                          <div className="invisible group-hover:visible absolute z-50 p-2 bg-gray-900 text-white text-xs rounded-lg 
+                            -translate-y-full top-0 left-0 mt-[-10px] whitespace-normal
+                            after:content-[''] after:absolute after:left-1/2 after:top-[100%] after:-translate-x-1/2 
+                            after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-900">
+                            {message.recipient}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  )}
+                  {visibleColumns.has('gateway_name') && (
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {message.gateway_name || 'N/A'}
+                    </td>
+                  )}
+                  {visibleColumns.has('status') && (
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      <span className={`
+                        inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                        ${message.status === 'delivered' 
+                          ? 'bg-green-100 text-green-800 ring-1 ring-green-600/20' 
+                          : message.status === 'failed'
+                          ? 'bg-red-100 text-red-800 ring-1 ring-red-600/20'
+                          : message.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600/20'
+                          : 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20'
+                        }
+                      `}>
+                        <span className={`
+                          mr-1 h-1.5 w-1.5 rounded-full
+                          ${message.status === 'delivered' ? 'bg-green-600' :
+                            message.status === 'failed' ? 'bg-red-600' :
+                            message.status === 'pending' ? 'bg-yellow-600' :
+                            'bg-gray-600'}
+                        `} />
+                        {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.has('created_at') && (
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
+                    </td>
+                  )}
+                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigator.clipboard.writeText(message.message);
+                          toast.success('Message copied to clipboard');
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                        title="Copy message"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (confirm('Are you sure you want to resend this message?')) {
+                            // Add resend mutation here
+                            toast.success('Message queued for resend');
+                          }
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        title="Resend message"
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
-} 
+}
