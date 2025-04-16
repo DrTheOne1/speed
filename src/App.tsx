@@ -27,6 +27,7 @@ import Messages from './pages/Messages';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ActivationSuccess from './pages/auth/ActivationSuccess';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -51,6 +52,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/activation-success" element={<ActivationSuccess />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>

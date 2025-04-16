@@ -313,11 +313,10 @@ export default function Register() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Full Name"
                 />
                 <label
                   htmlFor="name"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-2.5 peer-focus:text-gray-700"
+                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
                 >
                   Full Name
                 </label>
@@ -346,13 +345,7 @@ export default function Register() {
 
             {/* Mobile Number with Country Code */}
             <div className="space-y-4">
-              <div className="relative z-0">
-                <label
-                  htmlFor="country"
-                  className="absolute -top-2.5 left-2 px-2 bg-white text-gray-700 text-sm z-10"
-                >
-                  Country Code
-                </label>
+              <div className="relative z-30"> {/* Increase z-index here */}
                 <Select
                   inputId="country"
                   value={selectedCountry}
@@ -374,11 +367,33 @@ export default function Register() {
                     }),
                     menu: (base) => ({
                       ...base,
-                      zIndex: 20
+                      zIndex: 50, // Make sure this is higher than the label's z-index
+                      backgroundColor: 'white',
+                      border: '1px solid #D1D5DB',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
                     }),
                     menuList: (base) => ({
                       ...base,
-                      maxHeight: '200px'
+                      maxHeight: '200px',
+                      backgroundColor: 'white',
+                      '&::-webkit-scrollbar': {
+                        width: '8px'
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        background: '#F3F4F6'
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: '#9CA3AF',
+                        borderRadius: '4px'
+                      }
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isFocused ? '#EEF2FF' : 'white',
+                      color: '#111827',
+                      '&:hover': {
+                        backgroundColor: '#EEF2FF'
+                      }
                     }),
                     placeholder: (base) => ({
                       ...base,
@@ -387,8 +402,15 @@ export default function Register() {
                   }}
                   placeholder="Select country code"
                 />
+                <label
+                  htmlFor="country"
+                  className="absolute -top-2.5 left-2 px-2 bg-white text-gray-700 text-sm z-10"
+                >
+                  Country Code
+                </label>
               </div>
 
+              {/* Mobile Number Input */}
               <div className="relative">
                 <input
                   type="tel"
@@ -397,11 +419,10 @@ export default function Register() {
                   onChange={(e) => setMobile(e.target.value)}
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Mobile Number"
                 />
                 <label
                   htmlFor="mobile"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-2.5 peer-focus:text-gray-700"
+                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
                 >
                   Mobile Number
                 </label>
@@ -409,6 +430,7 @@ export default function Register() {
             </div>
 
             <div>
+              {/* Password Input */}
               <div className="relative">
                 <input
                   type="password"
@@ -417,11 +439,10 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Password"
                 />
                 <label
                   htmlFor="password"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-2.5 peer-focus:text-gray-700"
+                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
                 >
                   Password
                 </label>

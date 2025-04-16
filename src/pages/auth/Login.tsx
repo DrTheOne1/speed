@@ -113,11 +113,10 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Email address"
                 />
                 <label
                   htmlFor="email"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-2.5 peer-focus:text-gray-700"
+                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
                 >
                   Email address
                 </label>
@@ -133,11 +132,10 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Password"
                 />
                 <label
                   htmlFor="password"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-2.5 peer-focus:text-gray-700"
+                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
                 >
                   Password
                 </label>
@@ -161,12 +159,12 @@ export default function Login() {
           </form>
 
           {/* Links */}
-          <div className="mt-4 flex items-center justify-between">
-            <Link to="/register" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-              Create Account
+          <div className="mt-4 text-center space-y-2">
+            <Link to="/register" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 block">
+              Create an account
             </Link>
-            <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-              Forgot Password?
+            <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 block">
+              Forgot your password?
             </Link>
           </div>
         </div>
