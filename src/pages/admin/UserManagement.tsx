@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/button';
@@ -24,36 +24,12 @@ interface Gateway {
   name: string;
 }
 
-interface ContextMenuState {
-  visible: boolean;
-  x: number;
-  y: number;
-  user: User | null;
-}
-
 export default function UserManagement() {
   const { session } = useAuth();
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
-    visible: false,
-    x: 0,
-    y: 0,
-    user: null,
-  });
+  const [editedCredits, setEditedCredits] = useState<string>('');
+  const [isEditingCredits, setIsEditingCredits] = useState(false);
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (contextMenu.visible) {
-        setContextMenu(prev => ({ ...prev, visible: false }));
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [contextMenu.visible]);
 
   const { data: users, isLoading: isLoadingUsers, error: usersError } = useQuery({
     queryKey: ['users'],
@@ -84,28 +60,27 @@ export default function UserManagement() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (user: User) => {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .update({
           email: user.email,
           role: user.role,
           gateway_id: user.gateway_id,
-          sender_names: user.sender_names
+          credits: parseFloat(editedCredits) || user.credits
         })
-        .eq('id', user.id)
-        .select()
-        .single();
+        .eq('id', user.id);
 
       if (error) throw error;
-      return data;
+      return user;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      setIsEditingCredits(false);
       setEditingUser(null);
       toast.success('User updated successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(`Failed to update user: ${error.message}`);
     }
   });
 
@@ -148,56 +123,26 @@ export default function UserManagement() {
     });
   };
 
-  const calculateMenuPosition = (e: React.MouseEvent) => {
-    const x = e.clientX;
-    const y = e.clientY;
-    
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    // Menu dimensions (adjust these values based on your actual menu size)
-    const menuWidth = 200;
-    const menuHeight = 150;
-    
-    // Calculate positions
-    let posX = x;
-    let posY = y;
-    
-    // Check right edge
-    if (x + menuWidth > viewportWidth) {
-      posX = viewportWidth - menuWidth - 10;
+  const handleCreditUpdate = (userId: string, newCredits: string) => {
+    if (!newCredits || isNaN(parseFloat(newCredits))) {
+      toast.error('Please enter a valid number');
+      return;
     }
     
-    // Check bottom edge
-    if (y + menuHeight > viewportHeight) {
-      posY = viewportHeight - menuHeight - 10;
-    }
-    
-    return { x: posX, y: posY };
-  };
+    const user = users?.find(u => u.id === userId);
+    if (!user) return;
 
-  const handleContextMenu = (e: React.MouseEvent, user: User) => {
-    e.preventDefault();
-    const { x, y } = calculateMenuPosition(e);
-    setContextMenu({
-      visible: true,
-      x,
-      y,
-      user,
+    updateUserMutation.mutate({
+      ...user,
+      credits: parseFloat(newCredits)
     });
   };
 
-  const handleAddCredit = (user: User) => {
-    // Placeholder function for adding credit
-    toast.success(`Credit added to user: ${user.email}`);
-  };
-
   if (isLoadingUsers || isLoadingGateways) {
-    return (
+  return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+        </div>
     );
   }
 
@@ -226,7 +171,7 @@ export default function UserManagement() {
           </TableHeader>
           <TableBody>
             {users?.map((user: User) => (
-              <TableRow key={user.id} onContextMenu={(e) => handleContextMenu(e, user)}>
+              <TableRow key={user.id}>
                 {editingUser?.id === user.id ? (
                   <>
                     <TableCell>
@@ -297,7 +242,42 @@ export default function UserManagement() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{user.credits}</TableCell>
+                    <TableCell>
+                      {isEditingCredits && editingUser?.id === user.id ? (
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="number"
+                            value={editedCredits}
+                            onChange={(e) => setEditedCredits(e.target.value)}
+                            className="w-24"
+                            min="0"
+                            step="1"
+                          />
+                          <Button 
+                            size="sm"
+                            onClick={() => handleCreditUpdate(user.id, editedCredits)}
+                            disabled={updateUserMutation.isLoading}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span>{user.credits}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingUser(user);
+                              setIsEditingCredits(true);
+                              setEditedCredits(user.credits.toString());
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button onClick={handleSave}>Save</Button>
@@ -317,7 +297,22 @@ export default function UserManagement() {
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell>{user.credits}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <span>{user.credits}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingUser(user);
+                            setIsEditingCredits(true);
+                            setEditedCredits(user.credits.toString());
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Button onClick={() => handleEdit(user)}>Edit</Button>
                     </TableCell>
@@ -328,34 +323,6 @@ export default function UserManagement() {
           </TableBody>
         </Table>
       </div>
-      {contextMenu.visible && (
-        <div
-          className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200"
-          style={{
-            top: contextMenu.y,
-            left: contextMenu.x,
-            width: 'auto',
-            minWidth: '200px',
-            maxWidth: '250px'
-          }}
-        >
-          <div className="py-1">
-            {/* Menu items */}
-            <button
-              onClick={() => handleEdit(contextMenu.user!)}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Edit User
-            </button>
-            <button
-              onClick={() => handleAddCredit(contextMenu.user!)}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Add Credit
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
