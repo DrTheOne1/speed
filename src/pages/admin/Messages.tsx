@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { logger } from '../../utils/logger';
-import { Search, Filter, Download, MessageSquare } from 'lucide-react';
+import { Search, Filter, Download, MessageSquare, RefreshCw, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Message {
@@ -26,6 +26,37 @@ export default function Messages() {
     start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const handleExport = () => {
+    if (!messages?.length) return;
+
+    const csvData = messages.map(message => ({
+      Message: message.message,
+      Recipient: message.recipient,
+      Status: message.status,
+      User: message.user_email || 'N/A',
+      Gateway: message.gateway_name || 'N/A',
+      'Created At': format(new Date(message.created_at), 'yyyy-MM-dd HH:mm:ss')
+    }));
+
+    const csvString = [
+      Object.keys(csvData[0]).join(','),
+      ...csvData.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `messages-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   // Check database connection first
   useEffect(() => {
@@ -184,6 +215,15 @@ export default function Messages() {
             A list of all messages in the system including their status and details.
           </p>
         </div>
+        <div className="sm:flex-none">
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -228,6 +268,16 @@ export default function Messages() {
             />
           </div>
         </div>
+        <button
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ['admin-messages'] });
+            toast.success('Refreshing messages...');
+          }}
+          className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-semibold"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </button>
       </div>
 
       <div className="mt-8 flow-root">
@@ -271,38 +321,44 @@ export default function Messages() {
                       </td>
                     </tr>
                   ) : (
-                    messages?.map((message) => (
-                      <tr key={message.id}>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                          <div className="flex items-center">
-                            <MessageSquare className="h-5 w-5 mr-2 text-gray-400" />
-                            <span className="truncate max-w-xs">{message.message}</span>
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {message.recipient}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {message.user_email || 'N/A'}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {message.gateway_name || 'N/A'}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                            message.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                            message.status === 'failed' ? 'bg-red-100 text-red-800' :
-                            message.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
-                        </td>
-                      </tr>
-                    ))
+                    messages
+                      ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                      .map((message) => (
+                        <tr 
+                          key={message.id}
+                          onClick={() => setSelectedMessage(message)}
+                          className="cursor-pointer hover:bg-gray-50"
+                        >
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            <div className="flex items-center">
+                              <MessageSquare className="h-5 w-5 mr-2 text-gray-400" />
+                              <span className="truncate max-w-xs">{message.message}</span>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {message.recipient}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {message.user_email || 'N/A'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {message.gateway_name || 'N/A'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                              message.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                              message.status === 'failed' ? 'bg-red-100 text-red-800' :
+                              message.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
+                          </td>
+                        </tr>
+                      ))
                   )}
                 </tbody>
               </table>
@@ -310,6 +366,74 @@ export default function Messages() {
           </div>
         </div>
       </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-gray-700">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, messages?.length || 0)} of {messages?.length} messages
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {Math.ceil((messages?.length || 0) / itemsPerPage)}
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil((messages?.length || 0) / itemsPerPage), p + 1))}
+            disabled={currentPage >= Math.ceil((messages?.length || 0) / itemsPerPage)}
+            className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      {selectedMessage && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold">Message Details</h3>
+              <button onClick={() => setSelectedMessage(null)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Message</label>
+                <p className="mt-1 text-sm text-gray-900">{selectedMessage.message}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Recipient</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedMessage.recipient}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedMessage.status}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">User</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedMessage.user_email || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Gateway</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedMessage.gateway_name || 'N/A'}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Created At</label>
+                <p className="mt-1 text-sm text-gray-900">
+                  {format(new Date(selectedMessage.created_at), 'PPpp')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-} 
+}
