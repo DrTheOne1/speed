@@ -1,10 +1,95 @@
-import { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Loader2, Eye, EyeOff, XCircle } from 'lucide-react';
+import { Loader2, Eye, EyeOff, XCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/TranslationContext';
 import { toast } from 'react-hot-toast';
 
+const InputField = ({ type, value, onChange, placeholder, error }: any) => (
+  <div className="relative">
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={`block w-full rounded-md border ${
+        error ? 'border-red-500' : 'border-gray-300'
+      } px-3 py-2`}
+    />
+    {error && <p className="text-sm text-red-600">{error}</p>}
+  </div>
+);
+
+interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+}
+
+const languages: Language[] = [
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+  { code: 'sv', name: 'Swedish', nativeName: 'Svenska' }
+];
+
+const LanguageDropdown: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+}> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedLanguage = languages.find(lang => lang.code === value);
+
+  return (
+    <div className="relative z-50" ref={dropdownRef}>
+      <button
+        type="button"
+        className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{selectedLanguage?.nativeName}</span>
+        <ChevronDown className="ml-2 h-4 w-4" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-1 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+          <div className="py-1" role="menu" aria-orientation="vertical">
+            {languages.map((language) => (
+              <button
+                key={language.code}
+                onClick={() => {
+                  onChange(language.code);
+                  setIsOpen(false);
+                }}
+                className={`${
+                  value === language.code ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                role="menuitem"
+              >
+                {language.nativeName}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Login() {
+  const { t, language, setLanguage } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +108,7 @@ export default function Login() {
     e.preventDefault();
 
     if (isLocked) {
-      toast.error('Too many attempts. Please try again later.');
+      toast.error(t('login.locked'));
       return;
     }
 
@@ -33,10 +118,10 @@ export default function Login() {
     try {
       await signIn(email, password);
       setLoginAttempts(0);
-      toast.success('Welcome back!');
+      toast.success(t('login.success'));
       navigate('/');
     } catch (error: any) {
-      setLoginAttempts(prev => {
+      setLoginAttempts((prev) => {
         const newAttempts = prev + 1;
         if (newAttempts >= MAX_ATTEMPTS) {
           setIsLocked(true);
@@ -59,7 +144,7 @@ export default function Login() {
     try {
       // Add your resend email logic here
       setEmailSent(true);
-      toast.success('Confirmation email sent!');
+      toast.success(t('login.emailSent'));
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -71,11 +156,12 @@ export default function Login() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 p-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to continue
-          </p>
+        <div className="text-center mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-900">{t('login.title')}</h1>
+          <LanguageDropdown
+            value={language}
+            onChange={(value) => setLanguage(value as 'en' | 'ar' | 'sv')}
+          />
         </div>
 
         {/* Form Container */}
@@ -89,8 +175,8 @@ export default function Login() {
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-red-800">
-                    {error === 'Invalid login credentials' 
-                      ? 'Incorrect email or password'
+                    {error === 'Invalid login credentials'
+                      ? t('login.invalidCredentials')
                       : error}
                   </h3>
                 </div>
@@ -104,13 +190,15 @@ export default function Login() {
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">
-                    Confirmation email sent! Please check your inbox.
-                  </p>
+                  <p className="text-sm font-medium text-green-800">{t('login.emailSent')}</p>
                 </div>
               </div>
             </div>
@@ -118,60 +206,37 @@ export default function Login() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <div className="relative">
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  aria-describedby="email-error"
-                />
-                {email && !email.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/) && (
-                  <p className="mt-1 text-sm text-red-600" id="email-error">
-                    Please enter a valid email address
-                  </p>
-                )}
-                <label
-                  htmlFor="email"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
-                >
-                  Email address
-                </label>
-              </div>
-            </div>
+            <InputField
+              type="email"
+              value={email}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              placeholder={t('login.email')}
+              error={
+                email && !email.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/)
+                  ? t('login.invalidEmail')
+                  : error
+              }
+            />
 
             <div>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  )}
-                </button>
-                <label
-                  htmlFor="password"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
-                >
-                  Password
-                </label>
-              </div>
+              <InputField
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                placeholder={t('login.password')}
+                error={error}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                )}
+              </button>
             </div>
 
             <div className="flex items-center justify-between">
@@ -183,14 +248,14 @@ export default function Login() {
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Remember me
+                  {t('login.remember')}
                 </label>
               </div>
               <Link
                 to="/forgot-password"
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
               >
-                Forgot your password?
+                {t('login.forgot')}
               </Link>
             </div>
 
@@ -202,10 +267,10 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                  Signing in...
+                  {t('login.loading')}
                 </>
               ) : (
-                'Sign in'
+                t('login.submit')
               )}
             </button>
           </form>
@@ -213,7 +278,7 @@ export default function Login() {
           {/* Links */}
           <div className="mt-4 text-center">
             <Link to="/register" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-              Don't have an account? Sign up
+              {t('login.register')}
             </Link>
           </div>
         </div>

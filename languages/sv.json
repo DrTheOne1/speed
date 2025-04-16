@@ -1,0 +1,17 @@
+{
+  "login": {
+    "title": "Logga in",
+    "email": "E-post",
+    "password": "Lösenord",
+    "submit": "Logga in",
+    "remember": "Kom ihåg mig",
+    "forgot": "Glömt lösenord?",
+    "invalidCredentials": "Ogiltiga inloggningsuppgifter",
+    "emailSent": "E-post har skickats",
+    "invalidEmail": "Ogiltig e-postadress",
+    "loading": "Laddar...",
+    "locked": "Kontot är låst. Försök igen senare.",
+    "success": "Inloggning lyckades",
+    "register": "Skapa ett konto"
+  }
+}
