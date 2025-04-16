@@ -28,7 +28,16 @@ export default function UserManagement() {
   const { session } = useAuth();
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editedCredits, setEditedCredits] = useState<string>('');
-  const [isEditingCredits, setIsEditingCredits] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [isConfirmingAction, setIsConfirmingAction] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    type: 'save' | 'delete' | 'credit';
+    userId: string;
+    data?: any;
+  } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const queryClient = useQueryClient();
 
   const { data: users, isLoading: isLoadingUsers, error: usersError } = useQuery({
@@ -66,7 +75,8 @@ export default function UserManagement() {
           email: user.email,
           role: user.role,
           gateway_id: user.gateway_id,
-          credits: parseFloat(editedCredits) || user.credits
+          credits: parseFloat(editedCredits) || user.credits,
+          sender_names: user.sender_names
         })
         .eq('id', user.id);
 
@@ -75,9 +85,11 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      setIsEditingCredits(false);
       setEditingUser(null);
-      toast.success('User updated successfully');
+      toast.success('User updated successfully', {
+        duration: 3000,
+        position: 'top-right',
+      });
     },
     onError: (error: Error) => {
       toast.error(`Failed to update user: ${error.message}`);
@@ -90,7 +102,23 @@ export default function UserManagement() {
 
   const handleSave = () => {
     if (!editingUser) return;
-    updateUserMutation.mutate(editingUser);
+    
+    // Validate sender names and remove empty ones
+    const validSenderNames = editingUser.sender_names.filter(name => name.trim() !== '');
+    
+    // Validate credits
+    const credits = parseFloat(editedCredits);
+    if (isNaN(credits) || credits < 0) {
+      toast.error('Please enter a valid credit amount');
+      return;
+    }
+
+    // Make sure we're passing all the data including sender names
+    updateUserMutation.mutate({
+      ...editingUser,
+      sender_names: validSenderNames,
+      credits: credits
+    });
   };
 
   const addSenderName = () => {
@@ -123,20 +151,23 @@ export default function UserManagement() {
     });
   };
 
-  const handleCreditUpdate = (userId: string, newCredits: string) => {
-    if (!newCredits || isNaN(parseFloat(newCredits))) {
-      toast.error('Please enter a valid number');
-      return;
-    }
-    
-    const user = users?.find(u => u.id === userId);
-    if (!user) return;
+  const filteredUsers = users?.filter(user => {
+    const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
 
-    updateUserMutation.mutate({
-      ...user,
-      credits: parseFloat(newCredits)
-    });
-  };
+  const totalPages = Math.ceil((filteredUsers?.length || 0) / itemsPerPage);
+  const paginatedUsers = filteredUsers?.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center p-4">
+      <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+    </div>
+  );
 
   if (isLoadingUsers || isLoadingGateways) {
   return (
@@ -157,6 +188,26 @@ export default function UserManagement() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">User Management</h1>
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center space-x-2">
+          <Input
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-xs"
+          />
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -170,8 +221,14 @@ export default function UserManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: User) => (
-              <TableRow key={user.id}>
+            {paginatedUsers?.map((user: User, index: number) => (
+              <TableRow 
+                key={user.id}
+                className={`
+                  ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                  hover:bg-gray-100 transition-colors duration-150
+                `}
+              >
                 {editingUser?.id === user.id ? (
                   <>
                     <TableCell>
@@ -243,45 +300,39 @@ export default function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {isEditingCredits && editingUser?.id === user.id ? (
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            type="number"
-                            value={editedCredits}
-                            onChange={(e) => setEditedCredits(e.target.value)}
-                            className="w-24"
-                            min="0"
-                            step="1"
-                          />
-                          <Button 
-                            size="sm"
-                            onClick={() => handleCreditUpdate(user.id, editedCredits)}
-                            disabled={updateUserMutation.isLoading}
-                          >
-                            Save
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-2">
-                          <span>{user.credits}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditingUser(user);
-                              setIsEditingCredits(true);
-                              setEditedCredits(user.credits.toString());
-                            }}
-                          >
-                            Edit
-                          </Button>
-                        </div>
-                      )}
+                      <Input
+                        type="number"
+                        value={editedCredits}
+                        onChange={(e) => setEditedCredits(e.target.value)}
+                        className="w-24"
+                        min="0"
+                        step="1"
+                      />
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button onClick={handleSave}>Save</Button>
-                        <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setPendingAction({
+                              type: 'save',
+                              userId: user.id
+                            });
+                            setIsConfirmingAction(true);
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            setEditingUser(null);
+                            setEditedCredits('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
                       </div>
                     </TableCell>
                   </>
@@ -297,24 +348,17 @@ export default function UserManagement() {
                         ))}
                       </div>
                     </TableCell>
+                    <TableCell>{user.credits}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span>{user.credits}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingUser(user);
-                            setIsEditingCredits(true);
-                            setEditedCredits(user.credits.toString());
-                          }}
-                        >
-                          Edit
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button onClick={() => handleEdit(user)}>Edit</Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          setEditingUser(user);
+                          setEditedCredits(user.credits.toString());
+                        }}
+                      >
+                        Edit
+                      </Button>
                     </TableCell>
                   </>
                 )}
@@ -323,6 +367,59 @@ export default function UserManagement() {
           </TableBody>
         </Table>
       </div>
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-gray-500">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers?.length || 0)} of {filteredUsers?.length} users
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+      {isConfirmingAction && pendingAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Confirm Action</h3>
+            <p className="mb-4">Are you sure you want to save these changes?</p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsConfirmingAction(false);
+                  setPendingAction(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (pendingAction.type === 'save') {
+                    handleSave();
+                  }
+                  setIsConfirmingAction(false);
+                  setPendingAction(null);
+                }}
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
