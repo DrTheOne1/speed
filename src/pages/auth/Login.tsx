@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, XCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -11,19 +11,42 @@ export default function Login() {
   const [error, setError] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const MAX_ATTEMPTS = 5;
+  const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
   const navigate = useNavigate();
   const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isLocked) {
+      toast.error('Too many attempts. Please try again later.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       await signIn(email, password);
+      setLoginAttempts(0);
       toast.success('Welcome back!');
       navigate('/');
     } catch (error: any) {
+      setLoginAttempts(prev => {
+        const newAttempts = prev + 1;
+        if (newAttempts >= MAX_ATTEMPTS) {
+          setIsLocked(true);
+          setTimeout(() => {
+            setIsLocked(false);
+            setLoginAttempts(0);
+          }, LOCK_TIME);
+        }
+        return newAttempts;
+      });
       setError(error.message);
       toast.error(error.message);
     } finally {
@@ -59,28 +82,19 @@ export default function Login() {
         <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-100">
           {/* Error Message */}
           {error && (
-            <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+            <div className="rounded-md bg-red-50 p-4 mb-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
+                  <XCircle className="h-5 w-5 text-red-400" />
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-red-800">{error}</p>
+                  <h3 className="text-sm font-medium text-red-800">
+                    {error === 'Invalid login credentials' 
+                      ? 'Incorrect email or password'
+                      : error}
+                  </h3>
                 </div>
               </div>
-              {error.includes('confirm your email') && (
-                <button
-                  type="button"
-                  onClick={handleResendEmail}
-                  disabled={resendingEmail || emailSent}
-                  className="mt-3 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 transition-colors duration-150"
-                >
-                  {resendingEmail && <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />}
-                  {resendingEmail ? 'Sending...' : emailSent ? 'Email sent!' : 'Resend confirmation email'}
-                </button>
-              )}
             </div>
           )}
 
@@ -112,8 +126,15 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  aria-describedby="email-error"
                 />
+                {email && !email.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/) && (
+                  <p className="mt-1 text-sm text-red-600" id="email-error">
+                    Please enter a valid email address
+                  </p>
+                )}
                 <label
                   htmlFor="email"
                   className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
@@ -126,13 +147,24 @@ export default function Login() {
             <div>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  )}
+                </button>
                 <label
                   htmlFor="password"
                   className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
@@ -142,10 +174,30 @@ export default function Login() {
               </div>
             </div>
 
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all duration-150"
+              disabled={loading || isLocked}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors duration-200"
             >
               {loading ? (
                 <>
@@ -159,12 +211,9 @@ export default function Login() {
           </form>
 
           {/* Links */}
-          <div className="mt-4 text-center space-y-2">
-            <Link to="/register" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 block">
-              Create an account
-            </Link>
-            <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 block">
-              Forgot your password?
+          <div className="mt-4 text-center">
+            <Link to="/register" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+              Don't have an account? Sign up
             </Link>
           </div>
         </div>

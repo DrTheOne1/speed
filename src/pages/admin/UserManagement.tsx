@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/button';
@@ -24,10 +24,36 @@ interface Gateway {
   name: string;
 }
 
+interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  user: User | null;
+}
+
 export default function UserManagement() {
   const { session } = useAuth();
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    user: null,
+  });
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenu.visible) {
+        setContextMenu(prev => ({ ...prev, visible: false }));
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [contextMenu.visible]);
 
   const { data: users, isLoading: isLoadingUsers, error: usersError } = useQuery({
     queryKey: ['users'],
@@ -122,11 +148,56 @@ export default function UserManagement() {
     });
   };
 
+  const calculateMenuPosition = (e: React.MouseEvent) => {
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Menu dimensions (adjust these values based on your actual menu size)
+    const menuWidth = 200;
+    const menuHeight = 150;
+    
+    // Calculate positions
+    let posX = x;
+    let posY = y;
+    
+    // Check right edge
+    if (x + menuWidth > viewportWidth) {
+      posX = viewportWidth - menuWidth - 10;
+    }
+    
+    // Check bottom edge
+    if (y + menuHeight > viewportHeight) {
+      posY = viewportHeight - menuHeight - 10;
+    }
+    
+    return { x: posX, y: posY };
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, user: User) => {
+    e.preventDefault();
+    const { x, y } = calculateMenuPosition(e);
+    setContextMenu({
+      visible: true,
+      x,
+      y,
+      user,
+    });
+  };
+
+  const handleAddCredit = (user: User) => {
+    // Placeholder function for adding credit
+    toast.success(`Credit added to user: ${user.email}`);
+  };
+
   if (isLoadingUsers || isLoadingGateways) {
-  return (
+    return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+      </div>
     );
   }
 
@@ -155,7 +226,7 @@ export default function UserManagement() {
           </TableHeader>
           <TableBody>
             {users?.map((user: User) => (
-              <TableRow key={user.id}>
+              <TableRow key={user.id} onContextMenu={(e) => handleContextMenu(e, user)}>
                 {editingUser?.id === user.id ? (
                   <>
                     <TableCell>
@@ -257,6 +328,34 @@ export default function UserManagement() {
           </TableBody>
         </Table>
       </div>
+      {contextMenu.visible && (
+        <div
+          className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200"
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x,
+            width: 'auto',
+            minWidth: '200px',
+            maxWidth: '250px'
+          }}
+        >
+          <div className="py-1">
+            {/* Menu items */}
+            <button
+              onClick={() => handleEdit(contextMenu.user!)}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              Edit User
+            </button>
+            <button
+              onClick={() => handleAddCredit(contextMenu.user!)}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              Add Credit
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,9 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   getSessionToken: () => Promise<string | null>;
+  signInWithGoogle: () => Promise<any>;
+  signInWithGithub: () => Promise<any>;
+  resetPassword: (email: string, captchaToken: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -100,8 +103,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  };
+
+  const signInWithGithub = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  };
+
+  const resetPassword = async (email: string, captchaToken: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        captchaToken,
+        redirectTo: 'https://sms-speed.netlify.app/reset-password',
+        options: {
+          emailRedirectTo: 'https://sms-speed.netlify.app/reset-password',
+        }
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp, getSessionToken }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp, getSessionToken, signInWithGoogle, signInWithGithub, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
