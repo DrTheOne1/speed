@@ -427,7 +427,17 @@
     },
     "import": {
       "title": "Import Contacts",
-      "description": "Import contacts from a CSV file",
+      "description": "Import contacts from a CSV file or enter phone numbers manually",
+      "manual": {
+        "title": "Manual Import",
+        "description": "Enter phone numbers directly with or without country codes",
+        "country": "Country Code",
+        "group": "Assign to Group",
+        "noGroup": "No Group",
+        "numbers": "Phone Numbers",
+        "placeholder": "Enter one phone number per line\nExample:\n0700506180\n+46700506180\n0046700506180",
+        "format": "Enter one phone number per line. Numbers can be entered with or without country code. The system will automatically format them correctly."
+      },
       "template": {
         "title": "Download Template",
         "description": "Download our CSV template to ensure your contact list is formatted correctly",
@@ -442,6 +452,10 @@
         "import": "Import Contacts",
         "success": "Contacts imported successfully!",
         "error": "Failed to import contacts"
+      },
+      "error": {
+        "empty": "Please enter at least one phone number",
+        "invalid": "Invalid phone number format"
       },
       "progress": {
         "uploaded": "{{filename}}",

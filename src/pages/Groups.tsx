@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2, Edit, Users, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -12,6 +12,18 @@ export default function Groups() {
   const [newGroup, setNewGroup] = useState({ name: '', description: '' });
   const [editingGroup, setEditingGroup] = useState<{ id: string; name: string; description: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get current user on component mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUserId(data.session.user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
 
   const { data: groups, refetch } = useQuery({
     queryKey: ['groups'],
@@ -19,22 +31,35 @@ export default function Groups() {
       const { data, error } = await supabase
         .from('groups')
         .select('*, group_members(count)')
+        .eq('user_id', userId) // Only get groups for current user
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data;
     },
+    enabled: !!userId // Only run query when we have a user ID
   });
 
   const handleAddGroup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userId) {
+      toast.error("You must be logged in to create groups");
+      return;
+    }
+
     try {
       setError(null);
       const { error } = await supabase
         .from('groups')
-        .insert([newGroup]);
+        .insert([{
+          ...newGroup,
+          user_id: userId // Add user_id to group creation
+        }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating group:', error);
+        throw error;
+      }
 
       setNewGroup({ name: '', description: '' });
       setIsAddingGroup(false);
@@ -100,22 +125,24 @@ export default function Groups() {
 
   return (
     <div>
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">{t('contacts.groups.title')}</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            {t('contacts.description')}
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            type="button"
-            onClick={() => setIsAddingGroup(true)}
-            className="flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t('contacts.groups.add')}
-          </button>
+      <div className="bg-white shadow">
+        <div className="px-4 py-5 sm:px-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">{t('contacts.groups.title')}</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                {t('contacts.groups.description')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAddingGroup(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('contacts.groups.add')}
+            </button>
+          </div>
         </div>
       </div>
 

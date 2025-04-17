@@ -474,7 +474,17 @@
     },
     "import": {
       "title": "Importera kontakter",
-      "description": "Importera kontakter från en CSV-fil",
+      "description": "Importera kontakter från en CSV-fil eller ange telefonnummer manuellt",
+      "manual": {
+        "title": "Manuell import",
+        "description": "Ange telefonnummer direkt med eller utan landskod",
+        "country": "Landskod",
+        "group": "Tilldela till grupp",
+        "noGroup": "Ingen grupp",
+        "numbers": "Telefonnummer",
+        "placeholder": "Ange ett telefonnummer per rad\nExempel:\n0700506180\n+46700506180\n0046700506180",
+        "format": "Ange ett telefonnummer per rad. Nummer kan anges med eller utan landskod. Systemet kommer automatiskt att formatera dem korrekt."
+      },
       "template": {
         "title": "Ladda ner mall",
         "description": "Ladda ner vår CSV-mall för att säkerställa att din kontaktlista är korrekt formaterad",
@@ -487,8 +497,12 @@
         "fileType": "Endast CSV-filer",
         "importing": "Importerar...",
         "import": "Importera kontakter",
-        "success": "Kontakterna har importerats!",
+        "success": "Kontakter importerades framgångsrikt!",
         "error": "Kunde inte importera kontakter"
+      },
+      "error": {
+        "empty": "Vänligen ange minst ett telefonnummer",
+        "invalid": "Ogiltigt telefonnummerformat"
       },
       "progress": {
         "uploaded": "{{filename}}",
