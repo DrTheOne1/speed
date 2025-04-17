@@ -54,7 +54,7 @@ export default function LanguageSelector() {
                 }}
                 className={`${
                   language === lang.code ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                } block w-full px-4 py-2 text-sm ${lang.code === 'ar' ? 'text-right' : 'text-right'} hover:bg-gray-50`}
+                } block w-full px-4 py-2 text-sm text-right hover:bg-gray-50`}
                 role="menuitem"
               >
                 {lang.nativeName}

@@ -15,7 +15,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Load saved language from localStorage
-    const savedLang = localStorage.getItem('i18nextLng');
+    const savedLang = localStorage.getItem('language');
     if (savedLang) {
       i18n.changeLanguage(savedLang);
     }
@@ -23,22 +23,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Update RTL state based on current language
-    setIsRTL(['ar', 'he', 'fa'].includes(i18n.language));
+    const isRtl = ['ar', 'he', 'fa'].includes(i18n.language);
+    setIsRTL(isRtl);
     
     // Update document direction
-    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     
     // Add/remove RTL class for Tailwind
-    if (isRTL) {
+    if (isRtl) {
       document.documentElement.classList.add('rtl');
     } else {
       document.documentElement.classList.remove('rtl');
     }
-  }, [i18n.language, isRTL]);
+  }, [i18n.language]);
 
   const changeLanguage = async (lang: string) => {
     await i18n.changeLanguage(lang);
-    localStorage.setItem('i18nextLng', lang);
+    localStorage.setItem('language', lang);
   };
 
   return (

@@ -32,9 +32,9 @@
       "message": {
         "label": "الرسالة",
         "placeholder": "اكتب رسالتك هنا",
-        "characterCount": "{{count}}/160 حرف",
+        "characterCount": "{{count}}/800 حرف",
         "required": "الرسالة مطلوبة",
-        "tooLong": "يجب أن تكون الرسالة أقل من 160 حرف"
+        "tooLong": "يجب أن تكون الرسالة أقل من 800 حرف"
       },
       "schedule": {
         "label": "جدولة الرسالة",
@@ -75,6 +75,31 @@
       "recipient": "المستلم مطلوب",
       "message": "الرسالة مطلوبة",
       "maxLength": "يجب أن تكون الرسالة أقل من 160 حرفًا"
+    }
+  },
+  "billing": {
+    "title": "الفواتير والخطط",
+    "usage": {
+      "title": "الاستخدام الحالي",
+      "description": "مراقبة خطتك الحالية واستخدام الرصيد"
+    },
+    "currentPlan": "الخطة الحالية",
+    "creditsLeft": "الرصيد المتبقي",
+    "nextBilling": "الفاتورة القادمة",
+    "availablePlans": "الخطط المتاحة",
+    "loadingPlans": "جاري تحميل الخطط...",
+    "smsCreditsIncluded": "رصيد الرسائل المتضمن",
+    "subscribe": "اشتراك",
+    "billingHistory": "سجل الفواتير",
+    "history": {
+      "date": "التاريخ",
+      "description": "الوصف",
+      "amount": "المبلغ",
+      "status": "الحالة"
+    },
+    "payment": {
+      "redirecting": "جاري التحويل إلى صفحة الدفع...",
+      "failed": "فشل في معالجة الدفع"
     }
   }
 }

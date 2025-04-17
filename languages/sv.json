@@ -16,6 +16,7 @@
   },
   "send": {
     "title": "Skicka SMS",
+    "description": "Skicka individuella SMS-meddelanden",
     "recipient": "Mottagare",
     "message": "Meddelande",
     "characters": "Tecken",
@@ -23,13 +24,62 @@
     "loading": "Skickar...",
     "success": "Meddelandet har skickats",
     "error": "Det gick inte att skicka meddelandet",
-    "placeholder": {
-      "recipient": "Ange telefonnummer",
-      "message": "Skriv ditt meddelande här"
+    "credits": {
+      "available": "Tillgängliga krediter",
+      "balance": "krediter"
     },
-    "validation": {
-      "recipient": "Ogiltigt telefonnummer",
-      "message": "Meddelande krävs"
+    "form": {
+      "sender": {
+        "label": "Avsändare",
+        "placeholder": "Välj avsändare",
+        "required": "Avsändare krävs"
+      },
+      "recipient": {
+        "label": "Mottagare",
+        "placeholder": "Ange telefonnummer",
+        "required": "Mottagare krävs"
+      },
+      "message": {
+        "label": "Meddelande",
+        "placeholder": "Skriv ditt meddelande här",
+        "characterCount": "{{count}}/800 characters",
+        "required": "Meddelande krävs",
+        "tooLong": "Meddelandet får inte vara längre än 800 tecken"
+      },
+      "schedule": {
+        "label": "Schemalägg meddelande"
+      },
+      "sending": "Skickar...",
+      "submit": "Skicka meddelande"
+    },
+    "errors": {
+      "insufficientCredits": "Otillräckliga krediter",
+      "purchaseMessage": "Vänligen köp fler krediter för att skicka meddelanden"
+    }
+  },
+  "billing": {
+    "title": "Fakturering och abonnemang",
+    "usage": {
+      "title": "Aktuell användning",
+      "description": "Övervaka ditt nuvarande abonnemang och kreditanvändning"
+    },
+    "currentPlan": "Nuvarande abonnemang",
+    "creditsLeft": "Återstående krediter",
+    "nextBilling": "Nästa fakturering",
+    "availablePlans": "Tillgängliga abonnemang",
+    "loadingPlans": "Laddar abonnemang...",
+    "smsCreditsIncluded": "SMS-krediter ingår",
+    "subscribe": "Prenumerera",
+    "billingHistory": "Faktureringshistorik",
+    "history": {
+      "date": "Datum",
+      "description": "Beskrivning",
+      "amount": "Belopp",
+      "status": "Status"
+    },
+    "payment": {
+      "redirecting": "Omdirigerar till betalning...",
+      "failed": "Det gick inte att behandla betalningen"
     }
   }
 }

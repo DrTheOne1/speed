@@ -12,7 +12,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const { language } = useTranslation();
+  const { i18n } = useTranslation();
 
   const { data: isAdmin } = useQuery({
     queryKey: ['user-role'],
@@ -36,35 +36,17 @@ export default function Layout() {
   };
 
   const HeaderActions = () => {
-    const isArabic = language === 'ar';
-    
     return (
       <div className="flex items-center gap-x-4 lg:gap-x-6">
-        {isArabic ? (
-          <>
-            <button
-              type="button"
-              className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-5 w-5" />
-              Sign out
-            </button>
-            <LanguageSelector />
-          </>
-        ) : (
-          <>
-            <LanguageSelector />
-            <button
-              type="button"
-              className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-5 w-5" />
-              Sign out
-            </button>
-          </>
-        )}
+        <LanguageSelector />
+        <button
+          type="button"
+          className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-5 w-5" />
+          Sign out
+        </button>
       </div>
     );
   };

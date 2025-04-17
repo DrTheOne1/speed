@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CreditCard, Package, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from '../contexts/TranslationContext';
 
 interface User {
   id: string;
@@ -20,6 +21,7 @@ interface SubscriptionPlan {
 }
 
 export default function Billing() {
+  const { t, language } = useTranslation();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const { data: user } = useQuery<User>({
@@ -56,25 +58,25 @@ export default function Billing() {
   const handlePurchase = async (planName: string) => {
     try {
       // Implement Stripe integration here
-      alert('Redirecting to payment...');
+      alert(t('billing.payment.redirecting'));
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to process payment');
+      alert(t('billing.payment.failed'));
     }
   };
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-gray-900">Billing & Plans</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">{t('billing.title')}</h1>
 
       <div className="mt-8">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
             <h2 className="text-base font-semibold leading-6 text-gray-900">
-              Current Usage
+              {t('billing.usage.title')}
             </h2>
             <p className="mt-2 text-sm text-gray-700">
-              Monitor your current plan and credit usage
+              {t('billing.usage.description')}
             </p>
           </div>
         </div>
@@ -85,14 +87,16 @@ export default function Billing() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center">
                   <Package className="h-6 w-6 text-gray-400" />
-                  <span className="ml-2 text-sm font-medium text-gray-500">Current Plan</span>
+                  <span className="ml-2 text-sm font-medium text-gray-500">{t('billing.currentPlan')}</span>
                 </div>
-                <p className="mt-2 text-2xl font-semibold text-gray-900">Professional</p>
+                <p className="mt-2 text-2xl font-semibold text-gray-900">
+                  {t(`billing.plans.professional`)}
+                </p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center">
                   <CreditCard className="h-6 w-6 text-gray-400" />
-                  <span className="ml-2 text-sm font-medium text-gray-500">Credits Left</span>
+                  <span className="ml-2 text-sm font-medium text-gray-500">{t('billing.creditsLeft')}</span>
                 </div>
                 <p className="mt-2 text-2xl font-semibold text-gray-900">
                   {user?.credits?.toLocaleString() || '0'}
@@ -101,9 +105,11 @@ export default function Billing() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center">
                   <Shield className="h-6 w-6 text-gray-400" />
-                  <span className="ml-2 text-sm font-medium text-gray-500">Next Billing</span>
+                  <span className="ml-2 text-sm font-medium text-gray-500">{t('billing.nextBilling')}</span>
                 </div>
-                <p className="mt-2 text-2xl font-semibold text-gray-900">Mar 1, 2024</p>
+                <p className="mt-2 text-2xl font-semibold text-gray-900">
+                  {new Date('2024-03-01').toLocaleDateString(language === 'en' ? 'en-US' : language === 'sv' ? 'sv-SE' : 'ar-SA')}
+                </p>
               </div>
             </div>
           </div>
@@ -112,10 +118,10 @@ export default function Billing() {
 
       <div className="mt-8">
         <h2 className="text-base font-semibold leading-6 text-gray-900">
-          Available Plans
+          {t('billing.availablePlans')}
         </h2>
         {plansLoading ? (
-          <div className="mt-4 text-center text-gray-500">Loading plans...</div>
+          <div className="mt-4 text-center text-gray-500">{t('billing.loadingPlans')}</div>
         ) : (
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {plans?.map((plan) => (
@@ -136,7 +142,7 @@ export default function Billing() {
                     <span className="ml-1 text-sm font-semibold">/{plan.billing_cycle}</span>
                   </p>
                   <p className="mt-6 text-sm leading-6 text-gray-500">
-                    {plan.credits.toLocaleString()} SMS credits included
+                    {plan.credits.toLocaleString()} {t('billing.smsCreditsIncluded')}
                   </p>
 
                   <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
@@ -168,7 +174,7 @@ export default function Billing() {
                       : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                   }`}
                 >
-                  {selectedPlan === plan.id ? 'Current Plan' : 'Subscribe'}
+                  {selectedPlan === plan.id ? t('billing.currentPlan') : t('billing.subscribe')}
                 </button>
               </div>
             ))}
@@ -179,7 +185,7 @@ export default function Billing() {
       <div className="mt-8 bg-white shadow sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-base font-semibold leading-6 text-gray-900">
-            Billing History
+            {t('billing.billingHistory')}
           </h3>
           <div className="mt-4">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
@@ -187,16 +193,16 @@ export default function Billing() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Date
+                      {t('billing.history.date')}
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Description
+                      {t('billing.history.description')}
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Amount
+                      {t('billing.history.amount')}
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Status
+                      {t('billing.history.status')}
                     </th>
                   </tr>
                 </thead>

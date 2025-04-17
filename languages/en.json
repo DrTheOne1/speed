@@ -26,7 +26,7 @@
       "message": {
         "label": "Message",
         "placeholder": "Type your message here",
-        "characterCount": "{{count}}/160 characters"
+        "characterCount": "{{count}}/800 characters"
       },
       "schedule": {
         "label": "Schedule Message",
@@ -42,7 +42,7 @@
     "success": "Message sent successfully!",
     "credits": {
       "available": "Available Credits",
-      "balance": "{{count}} credits"
+      "balance": "credits"
     }
   },
   "sendSMS": {
@@ -70,10 +70,35 @@
       "sender": "Sender ID is required",
       "recipient": "Recipient is required",
       "message": "Message is required",
-      "maxLength": "Message must be less than 160 characters"
+      "maxLength": "Message must be less than 800 characters"
     }
   },
   "credits": {
     "available": "Available Credits"
+  },
+  "billing": {
+    "title": "Billing & Plans",
+    "usage": {
+      "title": "Current Usage",
+      "description": "Monitor your current plan and credit usage"
+    },
+    "currentPlan": "Current Plan",
+    "creditsLeft": "Credits Left",
+    "nextBilling": "Next Billing",
+    "availablePlans": "Available Plans",
+    "loadingPlans": "Loading plans...",
+    "smsCreditsIncluded": "SMS credits included",
+    "subscribe": "Subscribe",
+    "billingHistory": "Billing History",
+    "history": {
+      "date": "Date",
+      "description": "Description",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "payment": {
+      "redirecting": "Redirecting to payment...",
+      "failed": "Failed to process payment"
+    }
   }
 }

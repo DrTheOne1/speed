@@ -15,6 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
 import { useTranslation } from '../contexts/TranslationContext';
 
+interface SendSMSForm {
+  sender_id: string;
+  recipient: string;
+  message: string;
+  scheduledFor?: string;
+}
+
 interface User {
   id: string;
   email: string;
@@ -109,7 +116,7 @@ export default function SendSMS() {
     recipient: z.string().min(1, t('send.form.recipient.required')),
     message: z.string()
       .min(1, t('send.form.message.required'))
-      .max(160, t('send.form.message.tooLong')),
+      .max(800, t('send.form.message.tooLong')),
     scheduledFor: z.string().optional(),
   });
 
