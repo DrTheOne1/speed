@@ -5,60 +5,55 @@
     "password": "Lösenord",
     "submit": "Logga in",
     "remember": "Kom ihåg mig",
-    "forgot": "Glömt lösenord?",
-    "invalidCredentials": "Ogiltiga inloggningsuppgifter",
-    "emailSent": "E-post har skickats",
-    "invalidEmail": "Ogiltig e-postadress",
-    "loading": "Laddar...",
-    "locked": "Kontot är låst. Försök igen senare.",
-    "success": "Inloggning lyckades",
-    "register": "Skapa ett konto"
+    "forgot": "Glömt lösenord?"
   },
   "send": {
     "title": "Skicka SMS",
-    "description": "Skicka individuella SMS-meddelanden",
-    "recipient": "Mottagare",
-    "message": "Meddelande",
-    "characters": "Tecken",
-    "submit": "Skicka meddelande",
-    "loading": "Skickar...",
-    "success": "Meddelandet har skickats",
-    "error": "Det gick inte att skicka meddelandet",
-    "credits": {
-      "available": "Tillgängliga krediter",
-      "balance": "krediter"
+    "description": "Skicka enskilda SMS-meddelanden",
+    "creditSection": {
+      "title": "Tillgängliga krediter",
+      "remaining": "{{count}} krediter"
     },
     "form": {
+      "title": "Skicka meddelande",
+      "description": "Fyll i uppgifterna nedan för att skicka ditt meddelande",
       "sender": {
-        "label": "Avsändare",
-        "placeholder": "Välj avsändare",
-        "required": "Avsändare krävs"
+        "label": "Avsändar-ID",
+        "placeholder": "Välj avsändar-ID",
+        "validation": "Avsändar-ID krävs"
       },
       "recipient": {
         "label": "Mottagare",
         "placeholder": "Ange telefonnummer",
-        "required": "Mottagare krävs"
+        "validation": "Mottagarens telefonnummer krävs"
       },
       "message": {
         "label": "Meddelande",
         "placeholder": "Skriv ditt meddelande här",
-        "characterCount": "{{count}}/800 characters",
-        "required": "Meddelande krävs",
-        "tooLong": "Meddelandet får inte vara längre än 800 tecken"
+        "characterCount": "{{count}}/800 tecken",
+        "validation": "Meddelande krävs",
+        "messageTooLong": "Meddelandet måste vara mindre än 800 tecken"
       },
       "schedule": {
-        "label": "Schemalägg meddelande"
+        "label": "Schemalägg meddelande",
+        "placeholder": "Välj datum och tid"
       },
-      "sending": "Skickar...",
-      "submit": "Skicka meddelande"
+      "submit": "Skicka meddelande",
+      "sending": "Skickar..."
     },
     "errors": {
       "insufficientCredits": "Otillräckliga krediter",
       "purchaseMessage": "Vänligen köp fler krediter för att skicka meddelanden"
+    },
+    "success": "Meddelandet har skickats!",
+    "credits": {
+      "available": "Tillgängliga krediter",
+      "balance": "krediter"
     }
   },
   "billing": {
-    "title": "Fakturering och abonnemang",
+    "title": "Fakturering & Abonnemang",
+    "description": "Välj en plan som passar dina behov",
     "usage": {
       "title": "Aktuell användning",
       "description": "Övervaka ditt nuvarande abonnemang och kreditanvändning"
@@ -68,7 +63,6 @@
     "nextBilling": "Nästa fakturering",
     "availablePlans": "Tillgängliga abonnemang",
     "loadingPlans": "Laddar abonnemang...",
-    "smsCreditsIncluded": "SMS-krediter ingår",
     "subscribe": "Prenumerera",
     "billingHistory": "Faktureringshistorik",
     "history": {
@@ -79,7 +73,38 @@
     },
     "payment": {
       "redirecting": "Omdirigerar till betalning...",
-      "failed": "Det gick inte att behandla betalningen"
+      "failed": "Betalningen misslyckades"
+    },
+    "features": {
+      "unlimited_messages": "Obegränsade meddelanden",
+      "api_access": "API-åtkomst",
+      "priority_support": "Prioriterad support",
+      "detailed_analytics": "Detaljerad analys",
+      "custom_sender": "Anpassat avsändar-ID",
+      "scheduled_messages": "Schemalagda meddelanden",
+      "bulk_sending": "Massutskick",
+      "delivery_reports": "Leveransrapporter",
+      "sms_templates": "SMS-mallar",
+      "contact_groups": "Kontaktgrupper"
+    },
+    "billing_cycle": {
+      "monthly": "per månad",
+      "yearly": "per år",
+      "quarterly": "per kvartal"
+    }
+  },
+  "subscription_plans": {
+    "translations": {
+      "name": {
+        "en": "English Name Here",
+        "sv": "Swedish Name Here",
+        "ar": "Arabic Name Here"
+      },
+      "description": {
+        "en": "English Description Here",
+        "sv": "Swedish Description Here",
+        "ar": "Arabic Description Here"
+      }
     }
   }
 }

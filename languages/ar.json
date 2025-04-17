@@ -13,47 +13,6 @@
     "creditSection": {
       "title": "الرصيد المتاح",
       "remaining": "{{count}} رصيد"
-    },
-    "credits": {
-      "available": "الرصيد المتاح",
-      "balance": "{{count}} رصيد"
-    },
-    "form": {
-      "sender": {
-        "label": "اسم المرسل",
-        "placeholder": "اختر اسم المرسل",
-        "required": "اسم المرسل مطلوب"
-      },
-      "recipient": {
-        "label": "المستلم",
-        "placeholder": "أدخل رقم الهاتف",
-        "required": "رقم المستلم مطلوب"
-      },
-      "message": {
-        "label": "الرسالة",
-        "placeholder": "اكتب رسالتك هنا",
-        "characterCount": "{{count}}/800 حرف",
-        "required": "الرسالة مطلوبة",
-        "tooLong": "يجب أن تكون الرسالة أقل من 800 حرف"
-      },
-      "schedule": {
-        "label": "جدولة الرسالة",
-        "placeholder": "اختر التاريخ والوقت"
-      },
-      "submit": "إرسال",
-      "sending": "جاري الإرسال..."
-    },
-    "errors": {
-      "insufficientCredits": "رصيد غير كافي",
-      "purchaseMessage": "يرجى شراء المزيد من الرصيد لإرسال الرسائل"
-    },
-    "success": {
-      "sent": "تم إرسال الرسالة بنجاح!",
-      "scheduled": "تم جدولة الرسالة بنجاح!"
-    },
-    "toast": {
-      "success": "تم الإرسال بنجاح!",
-      "error": "فشل في إرسال الرسالة"
     }
   },
   "sendSMS": {
@@ -78,18 +37,18 @@
     }
   },
   "billing": {
-    "title": "الفواتير والخطط",
+    "title": "الفواتير والاشتراكات",
+    "description": "اختر الخطة التي تناسب احتياجاتك",
     "usage": {
       "title": "الاستخدام الحالي",
-      "description": "مراقبة خطتك الحالية واستخدام الرصيد"
+      "description": "مراقبة اشتراكك الحالي واستخدام الرصيد"
     },
     "currentPlan": "الخطة الحالية",
     "creditsLeft": "الرصيد المتبقي",
     "nextBilling": "الفاتورة القادمة",
     "availablePlans": "الخطط المتاحة",
     "loadingPlans": "جاري تحميل الخطط...",
-    "smsCreditsIncluded": "رصيد الرسائل المتضمن",
-    "subscribe": "اشتراك",
+    "subscribe": "اشترك",
     "billingHistory": "سجل الفواتير",
     "history": {
       "date": "التاريخ",
@@ -99,7 +58,38 @@
     },
     "payment": {
       "redirecting": "جاري التحويل إلى صفحة الدفع...",
-      "failed": "فشل في معالجة الدفع"
+      "failed": "فشلت عملية الدفع"
+    },
+    "features": {
+      "unlimited_messages": "رسائل غير محدودة",
+      "api_access": "وصول API",
+      "priority_support": "دعم ذو أولوية",
+      "detailed_analytics": "تحليلات مفصلة",
+      "custom_sender": "اسم مرسل مخصص",
+      "scheduled_messages": "رسائل مجدولة",
+      "bulk_sending": "إرسال جماعي",
+      "delivery_reports": "تقارير التوصيل",
+      "sms_templates": "قوالب الرسائل",
+      "contact_groups": "مجموعات جهات الاتصال"
+    },
+    "billing_cycle": {
+      "monthly": "شهرياً",
+      "yearly": "سنوياً",
+      "quarterly": "ربع سنوي"
+    }
+  },
+  "subscription_plans": {
+    "translations": {
+      "name": {
+        "en": "English Name Here",
+        "sv": "Swedish Name Here",
+        "ar": "الاسم بالعربية هنا"
+      },
+      "description": {
+        "en": "English Description Here",
+        "sv": "Swedish Description Here",
+        "ar": "الوصف بالعربية هنا"
+      }
     }
   }
 }

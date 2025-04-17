@@ -1,48 +1,18 @@
 {
   "login": {
-    "title": "Sign in",
+    "title": "Sign In",
     "email": "Email",
     "password": "Password",
-    "submit": "Sign in",
+    "submit": "Sign In",
     "remember": "Remember me",
     "forgot": "Forgot password?"
   },
   "send": {
-    "title": "Send SMS",
+    "title": "Send Message",
     "description": "Send individual SMS messages",
     "creditSection": {
       "title": "Available Credits",
       "remaining": "{{count}} credits"
-    },
-    "form": {
-      "sender": {
-        "label": "Sender ID",
-        "placeholder": "Select sender ID"
-      },
-      "recipient": {
-        "label": "Recipient",
-        "placeholder": "Enter phone number"
-      },
-      "message": {
-        "label": "Message",
-        "placeholder": "Type your message here",
-        "characterCount": "{{count}}/800 characters"
-      },
-      "schedule": {
-        "label": "Schedule Message",
-        "placeholder": "Select date and time"
-      },
-      "submit": "Send Message",
-      "sending": "Sending..."
-    },
-    "errors": {
-      "insufficientCredits": "Insufficient Credits",
-      "purchaseMessage": "Please purchase more credits to send messages"
-    },
-    "success": "Message sent successfully!",
-    "credits": {
-      "available": "Available Credits",
-      "balance": "credits"
     }
   },
   "sendSMS": {
@@ -77,17 +47,17 @@
     "available": "Available Credits"
   },
   "billing": {
-    "title": "Billing & Plans",
+    "title": "Billing & Subscriptions",
+    "description": "Choose a plan that best fits your needs",
     "usage": {
       "title": "Current Usage",
-      "description": "Monitor your current plan and credit usage"
+      "description": "Monitor your current subscription and credit usage"
     },
     "currentPlan": "Current Plan",
     "creditsLeft": "Credits Left",
     "nextBilling": "Next Billing",
     "availablePlans": "Available Plans",
     "loadingPlans": "Loading plans...",
-    "smsCreditsIncluded": "SMS credits included",
     "subscribe": "Subscribe",
     "billingHistory": "Billing History",
     "history": {
@@ -98,7 +68,24 @@
     },
     "payment": {
       "redirecting": "Redirecting to payment...",
-      "failed": "Failed to process payment"
+      "failed": "Payment failed"
+    },
+    "features": {
+      "unlimited_messages": "Unlimited Messages",
+      "api_access": "API Access",
+      "priority_support": "Priority Support",
+      "detailed_analytics": "Detailed Analytics",
+      "custom_sender": "Custom Sender ID",
+      "scheduled_messages": "Scheduled Messages",
+      "bulk_sending": "Bulk Sending",
+      "delivery_reports": "Delivery Reports",
+      "sms_templates": "SMS Templates",
+      "contact_groups": "Contact Groups"
+    },
+    "billing_cycle": {
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "quarterly": "Quarterly"
     }
   }
 }

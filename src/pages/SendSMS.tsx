@@ -112,22 +112,20 @@ export default function SendSMS() {
   });
 
   const sendSMSSchema = z.object({
-    sender_id: z.string().min(1, t('send.form.sender.required')),
-    recipient: z.string().min(1, t('send.form.recipient.required')),
+    sender_id: z.string().min(1, { message: t('send.form.validation.sender') }),
+    recipient: z.string().min(1, { message: t('send.form.validation.recipient') }),
     message: z.string()
-      .min(1, t('send.form.message.required'))
-      .max(800, t('send.form.message.tooLong')),
-    scheduledFor: z.string().optional(),
+      .min(1, { message: t('send.form.validation.message') })
+      .max(800, { message: t('send.form.validation.messageTooLong') }),
   });
 
-  const form = useForm<SendSMSForm>({
+  const form = useForm<z.infer<typeof sendSMSSchema>>({
     resolver: zodResolver(sendSMSSchema),
     defaultValues: {
-      sender_id: getLastSenderId(), // Set initial value from storage
-      recipient: getLastPhoneNumber(),
-      message: '',
-      scheduledFor: undefined,
-    },
+      sender_id: '',
+      recipient: '',
+      message: ''
+    }
   });
 
   const queryClient = useQueryClient();
@@ -367,6 +365,10 @@ export default function SendSMS() {
         </div>
 
         <Card>
+          <CardHeader>
+            <CardTitle>{t('send.form.title')}</CardTitle>
+            <CardDescription>{t('send.form.description')}</CardDescription>
+          </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -467,23 +469,25 @@ export default function SendSMS() {
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  disabled={loading || !user?.credits || user.credits <= 0}
-                  className="flex items-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      <span>{t('send.form.sending')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      <span>{t('send.form.submit')}</span>
-                    </>
-                  )}
-                </Button>
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={loading || !user?.credits || user.credits <= 0}
+                    className="flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>{t('send.form.sending')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>{t('send.form.submit')}</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
 
                 {(!user?.credits || user.credits <= 0) && (
                   <div className="mt-4 p-4 bg-yellow-50 rounded-lg flex items-start gap-3">
