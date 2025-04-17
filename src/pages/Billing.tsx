@@ -80,7 +80,7 @@ export default function Billing() {
     }
   });
 
-  // Fetch plans without translations
+  // Fetch plans
   const { data: plans, isLoading: plansLoading, error: plansError } = useQuery<SubscriptionPlan[]>({
     queryKey: ['subscription-plans'],
     queryFn: async () => {
@@ -96,20 +96,46 @@ export default function Billing() {
 
   // Translate plan content when language changes
   useEffect(() => {
-    if (!plans || language === 'en') return;
+    if (!plans || language === 'en') {
+      setTranslations({});
+      return;
+    }
 
     const translatePlans = async () => {
       const newTranslations: Record<string, string> = {};
 
       for (const plan of plans) {
-        // Translate name and description
-        const [translatedName, translatedDesc] = await Promise.all([
-          translateText(plan.name, language as 'sv' | 'ar'),
-          translateText(plan.description, language as 'sv' | 'ar')
-        ]);
+        try {
+          // First check if translations exist in the database
+          if (plan.translations?.name?.[language] && plan.translations?.description?.[language]) {
+            // Use database translations if available
+            newTranslations[`name-${plan.id}`] = plan.translations.name[language];
+            newTranslations[`desc-${plan.id}`] = plan.translations.description[language];
+          } else {
+            // Fall back to client-side translation
+            const [translatedName, translatedDesc] = await Promise.all([
+              translateText(plan.name, language as 'sv' | 'ar'),
+              translateText(plan.description, language as 'sv' | 'ar')
+            ]);
 
-        newTranslations[`name-${plan.id}`] = translatedName;
-        newTranslations[`desc-${plan.id}`] = translatedDesc;
+            newTranslations[`name-${plan.id}`] = translatedName;
+            newTranslations[`desc-${plan.id}`] = translatedDesc;
+          }
+
+          // Also translate any other database fields that need translation
+          // For example, if plan has custom fields:
+          if (plan.custom_text) {
+            newTranslations[`custom-${plan.id}`] = await translateText(
+              plan.custom_text, 
+              language as 'sv' | 'ar'
+            );
+          }
+        } catch (error) {
+          console.error('Translation error for plan:', plan.id, error);
+          // Use the original text as fallback
+          newTranslations[`name-${plan.id}`] = plan.name;
+          newTranslations[`desc-${plan.id}`] = plan.description;
+        }
       }
 
       setTranslations(newTranslations);
@@ -194,10 +220,16 @@ export default function Billing() {
                 <div className="space-y-4 flex-1">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium text-gray-900">
-                      {language === 'en' ? plan.name : translations[`name-${plan.id}`] || plan.name}
+                      {language === 'en' ? plan.name : 
+                       (plan.translations?.name?.[language] || 
+                        translations[`name-${plan.id}`] || 
+                        plan.name)}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {language === 'en' ? plan.description : translations[`desc-${plan.id}`] || plan.description}
+                      {language === 'en' ? plan.description : 
+                       (plan.translations?.description?.[language] || 
+                        translations[`desc-${plan.id}`] || 
+                        plan.description)}
                     </p>
                     <p className="text-3xl font-bold text-gray-900">
                       {formatCurrency(plan.price, language)}

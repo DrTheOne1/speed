@@ -51,6 +51,39 @@
       "balance": "krediter"
     }
   },
+  "sendSMS": {
+    "title": "Skicka SMS",
+    "recipientLabel": "Mottagare",
+    "recipientPlaceholder": "Ange telefonnummer",
+    "messageLabel": "Meddelande",
+    "messagePlaceholder": "Skriv ditt meddelande här",
+    "charactersRemaining": "{{count}} tecken återstår",
+    "messageWillBeSplit": "Meddelandet kommer att delas upp i {{count}} SMS",
+    "sendButton": "Skicka meddelande",
+    "sendingButton": "Skickar...",
+    "selectContacts": "Välj från kontakter",
+    "scheduleSend": "Schemalägg",
+    "now": "Nu",
+    "schedule": "Schemalägg",
+    "scheduledFor": "Schemalagd för",
+    "templates": "Mallar",
+    "useTemplate": "Använd mall",
+    "success": "Meddelandet har skickats",
+    "error": "Det gick inte att skicka meddelandet",
+    "validation": {
+      "recipientRequired": "Mottagare krävs",
+      "invalidPhone": "Ogiltigt telefonnummerformat",
+      "messageRequired": "Meddelande krävs",
+      "messageEmpty": "Meddelandet kan inte vara tomt"
+    },
+    "confirmation": {
+      "title": "Bekräfta sändning",
+      "message": "Skicka SMS till {{recipient}}?",
+      "cost": "Detta kommer att använda {{count}} kredit(er)",
+      "confirm": "Skicka",
+      "cancel": "Avbryt"
+    }
+  },
   "billing": {
     "title": "Fakturering & Abonnemang",
     "description": "Välj en plan som passar dina behov",
@@ -106,5 +139,49 @@
         "ar": "Arabic Description Here"
       }
     }
+  },
+  "dashboard": {
+    "title": "Kontrollpanel",
+    "welcome": "Välkommen tillbaka, {{name}}",
+    "summary": "Kontoöversikt",
+    "credits": {
+      "title": "Tillgängliga krediter",
+      "remaining": "{{count}} krediter återstår",
+      "low": "Dina krediter börjar ta slut"
+    },
+    "activity": {
+      "title": "Senaste aktivitet",
+      "empty": "Ingen nylig aktivitet",
+      "seeAll": "Se all aktivitet"
+    },
+    "stats": {
+      "title": "Prestanda",
+      "sent": "Skickade meddelanden",
+      "delivered": "Leveransfrekvens",
+      "failed": "Misslyckade"
+    },
+    "quickActions": {
+      "title": "Snabbåtgärder",
+      "send": "Skicka meddelande",
+      "contacts": "Hantera kontakter",
+      "templates": "SMS-mallar",
+      "billing": "Fakturering & prenumeration"
+    },
+    "alerts": {
+      "title": "Notiser",
+      "empty": "Inga nya notiser"
+    }
+  },
+  "navigation": {
+    "dashboard": "Instrumentpanel",
+    "sendSMS": "Skicka SMS",
+    "campaigns": "Kampanjer",
+    "contacts": "Kontakter",
+    "templates": "Mallar",
+    "analytics": "Analys",
+    "billing": "Fakturering",
+    "settings": "Inställningar",
+    "help": "Hjälp & Support",
+    "logout": "Logga ut"
   }
 }

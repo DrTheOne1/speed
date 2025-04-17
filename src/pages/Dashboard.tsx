@@ -1,276 +1,191 @@
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  MessageSquare, 
-  Users, 
-  Clock, 
-  CheckCircle, 
-  Globe, 
-  TrendingUp, 
-  AlertTriangle,
-  BarChart2,
-  Phone,
-  DollarSign
-} from 'lucide-react';
-import { Line, Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
 import { supabase } from '../lib/supabase';
-import { format } from 'date-fns';
+import { useTranslation } from '../contexts/TranslationContext';
+import { Activity, CreditCard, Send, Users, FileText, Bell } from 'lucide-react';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+interface UserStats {
+  messagesSent: number;
+  deliveryRate: number;
+  failedCount: number;
+}
+
+interface Activity {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+}
 
 export default function Dashboard() {
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard-stats'],
+  const { t, language } = useTranslation();
+  
+  // Get user data
+  const { data: user } = useQuery({
+    queryKey: ['user'],
     queryFn: async () => {
-      // TODO: Implement actual stats fetching
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('No user found');
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, credits')
+        .eq('id', authUser.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Get user stats
+  const { data: stats } = useQuery<UserStats>({
+    queryKey: ['user-stats'],
+    queryFn: async () => {
+      // Replace with your actual API call or database query
       return {
-        totalMessages: 1234,
-        deliveryRate: 98.5,
-        activeContacts: 567,
-        scheduledMessages: 12,
-        internationalReach: 45,
-        failureRate: 1.5,
-        averageDeliveryTime: '2.3s',
-        monthlyGrowth: 15.8
+        messagesSent: 156,
+        deliveryRate: 98.2,
+        failedCount: 3
       };
     }
   });
 
-  const { data: countryStats } = useQuery({
-    queryKey: ['country-stats'],
+  // Get recent activities
+  const { data: activities } = useQuery<Activity[]>({
+    queryKey: ['user-activities'],
     queryFn: async () => {
-      // TODO: Implement actual country stats fetching
-      return [
-        { country: 'United States', messages: 450, success: 98 },
-        { country: 'United Kingdom', messages: 320, success: 97 },
-        { country: 'Germany', messages: 280, success: 99 },
-        { country: 'France', messages: 250, success: 98 },
-        { country: 'Japan', messages: 220, success: 99 }
-      ];
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
     }
   });
 
-  const cards = [
-    { name: 'Total Messages', value: stats?.totalMessages.toLocaleString() ?? 0, icon: MessageSquare, trend: '+12.5%' },
-    { name: 'Delivery Rate', value: `${stats?.deliveryRate ?? 0}%`, icon: CheckCircle, trend: '+0.8%' },
-    { name: 'Active Contacts', value: stats?.activeContacts.toLocaleString() ?? 0, icon: Users, trend: '+5.2%' },
-    { name: 'Scheduled Messages', value: stats?.scheduledMessages ?? 0, icon: Clock, trend: '-2.1%' },
-    { name: 'International Reach', value: `${stats?.internationalReach ?? 0} countries`, icon: Globe, trend: '+3.4%' },
-    { name: 'Monthly Growth', value: `${stats?.monthlyGrowth ?? 0}%`, icon: TrendingUp, trend: '+2.3%' },
-    { name: 'Failure Rate', value: `${stats?.failureRate ?? 0}%`, icon: AlertTriangle, trend: '-0.3%' },
-    { name: 'Avg. Delivery Time', value: stats?.averageDeliveryTime ?? '0s', icon: Clock, trend: '-0.1s' }
-  ];
-
-  const deliveryData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Message Volume',
-        data: [65, 59, 80, 81, 56, 55],
-        fill: true,
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-        borderColor: 'rgb(99, 102, 241)',
-        tension: 0.4
-      }
-    ]
-  };
-
-  const countryData = {
-    labels: countryStats?.map(stat => stat.country) ?? [],
-    datasets: [
-      {
-        label: 'Messages Sent',
-        data: countryStats?.map(stat => stat.messages) ?? [],
-        backgroundColor: 'rgba(99, 102, 241, 0.8)'
-      }
-    ]
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <div className="flex items-center space-x-4">
-          <select className="rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>Last 3 months</option>
-            <option>Last year</option>
-          </select>
-          <button className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
-            Download Report
-          </button>
-        </div>
-      </div>
+    <div className={`container mx-auto px-4 py-8 ${language === 'ar' ? 'rtl' : 'ltr'}`}>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        {t('dashboard.title')}
+      </h1>
       
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
-          <div
-            key={card.name}
-            className="relative overflow-hidden rounded-lg bg-white px-4 py-5 shadow transition-all hover:shadow-lg sm:p-6"
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <card.icon className="h-8 w-8 text-gray-400" aria-hidden="true" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="truncate text-sm font-medium text-gray-500">{card.name}</dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">{card.value}</div>
-                    <div className={`ml-2 text-sm font-medium ${
-                      card.trend.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {card.trend}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800">
+          {t('dashboard.welcome', { name: user?.name || '' })}
+        </h2>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Message Volume Trend</h2>
-          <div className="h-80">
-            <Line
-              data={deliveryData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'top' as const,
-                  }
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true
-                  }
-                }
-              }}
-            />
+      {/* Credits Card */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-2">{t('dashboard.credits.title')}</h3>
+          <p className="text-3xl font-bold">{user?.credits || 0}</p>
+          <p className="text-gray-600">
+            {t('dashboard.credits.remaining', { count: user?.credits || 0 })}
+          </p>
+          {(user?.credits || 0) < 50 && (
+            <p className="text-amber-600 mt-2">{t('dashboard.credits.low')}</p>
+          )}
+        </div>
+
+        {/* Stats Cards */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-4">{t('dashboard.stats.title')}</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('dashboard.stats.sent')}</span>
+              <span className="font-semibold">{stats?.messagesSent || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('dashboard.stats.delivered')}</span>
+              <span className="font-semibold">{stats?.deliveryRate || 0}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('dashboard.stats.failed')}</span>
+              <span className="font-semibold">{stats?.failedCount || 0}</span>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Top Countries</h2>
-          <div className="h-80">
-            <Bar
-              data={countryData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'top' as const,
-                  }
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true
-                  }
-                }
-              }}
-            />
+        {/* Quick Actions */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-4">{t('dashboard.quickActions.title')}</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <a 
+              href="/send" 
+              className="flex items-center gap-2 p-2 bg-indigo-50 rounded hover:bg-indigo-100"
+            >
+              <Send size={18} />
+              <span>{t('dashboard.quickActions.send')}</span>
+            </a>
+            <a 
+              href="/contacts" 
+              className="flex items-center gap-2 p-2 bg-indigo-50 rounded hover:bg-indigo-100"
+            >
+              <Users size={18} />
+              <span>{t('dashboard.quickActions.contacts')}</span>
+            </a>
+            <a 
+              href="/templates" 
+              className="flex items-center gap-2 p-2 bg-indigo-50 rounded hover:bg-indigo-100"
+            >
+              <FileText size={18} />
+              <span>{t('dashboard.quickActions.templates')}</span>
+            </a>
+            <a 
+              href="/billing" 
+              className="flex items-center gap-2 p-2 bg-indigo-50 rounded hover:bg-indigo-100"
+            >
+              <CreditCard size={18} />
+              <span>{t('dashboard.quickActions.billing')}</span>
+            </a>
           </div>
         </div>
       </div>
 
-      <div className="rounded-lg bg-white shadow">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
-          <div className="mt-4">
-            <div className="flow-root">
-              <ul role="list" className="-mb-8">
-                {[
-                  {
-                    content: 'Bulk message campaign completed',
-                    target: '5000 recipients',
-                    icon: MessageSquare,
-                    iconBackground: 'bg-indigo-500',
-                    time: '3 mins ago'
-                  },
-                  {
-                    content: 'New gateway added',
-                    target: 'AWS SNS Integration',
-                    icon: Phone,
-                    iconBackground: 'bg-green-500',
-                    time: '1 hour ago'
-                  },
-                  {
-                    content: 'Credits purchased',
-                    target: '10,000 credits',
-                    icon: DollarSign,
-                    iconBackground: 'bg-blue-500',
-                    time: '2 hours ago'
-                  }
-                ].map((item, itemIdx) => (
-                  <li key={itemIdx}>
-                    <div className="relative pb-8">
-                      {itemIdx !== 2 ? (
-                        <span
-                          className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200"
-                          aria-hidden="true"
-                        />
-                      ) : null}
-                      <div className="relative flex space-x-3">
-                        <div>
-                          <span
-                            className={`${
-                              item.iconBackground
-                            } h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white`}
-                          >
-                            <item.icon className="h-5 w-5 text-white" aria-hidden="true" />
-                          </span>
-                        </div>
-                        <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                          <div>
-                            <p className="text-sm text-gray-500">
-                              {item.content}{' '}
-                              <span className="font-medium text-gray-900">{item.target}</span>
-                            </p>
-                          </div>
-                          <div className="whitespace-nowrap text-right text-sm text-gray-500">
-                            {item.time}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-6">
-              <button className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                View all activity
-                <span aria-hidden="true"> &rarr;</span>
-              </button>
-            </div>
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">{t('dashboard.activity.title')}</h3>
+            <a href="/activity" className="text-indigo-600 text-sm">
+              {t('dashboard.activity.seeAll')}
+            </a>
           </div>
+          
+          {activities && activities.length > 0 ? (
+            <ul className="space-y-4">
+              {activities.map(activity => (
+                <li key={activity.id} className="flex items-start gap-3">
+                  <Activity size={18} className="text-gray-400 mt-1" />
+                  <div>
+                    <p className="text-gray-900">{activity.description}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(activity.timestamp).toLocaleDateString(
+                        language === 'en' ? 'en-US' : 
+                        language === 'sv' ? 'sv-SE' : 'ar-SA'
+                      )}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">{t('dashboard.activity.empty')}</p>
+          )}
+        </div>
+
+        {/* Alerts/Notifications */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">{t('dashboard.alerts.title')}</h3>
+            <Bell size={18} className="text-gray-400" />
+          </div>
+          
+          <p className="text-gray-500">{t('dashboard.alerts.empty')}</p>
         </div>
       </div>
     </div>

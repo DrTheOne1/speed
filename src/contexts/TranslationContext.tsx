@@ -1,64 +1,74 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useTranslation as useI18nTranslation } from 'react-i18next';
+import React, { createContext, useContext, useState } from 'react';
 
-type Language = 'en' | 'ar' | 'sv';
-type Translations = Record<string, any>;
+// Import your language files
+import enTranslations from '../languages/en.json';
+import svTranslations from '../languages/sv.json';
+import arTranslations from '../languages/ar.json';
+
+type Language = 'en' | 'sv' | 'ar';
 
 interface TranslationContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string, params?: Record<string, any>) => string;
+  t: (key: string, options?: Record<string, any>) => string;
+  direction: 'ltr' | 'rtl';
 }
+
+const translations = {
+  en: enTranslations,
+  sv: svTranslations,
+  ar: arTranslations
+};
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
 export const TranslationProvider = ({ children }: { children: React.ReactNode }) => {
-  const { i18n } = useI18nTranslation();
-  
-  // Get initial language from localStorage or default to 'en'
-  const [language, setLanguage] = useState<Language>(() => 
-    (localStorage.getItem('language') as Language) || 'en'
-  );
-  const [translations, setTranslations] = useState<Translations>({});
+  const [language, setLanguage] = useState<Language>('en');
 
-  // Update localStorage and i18n when language changes
-  useEffect(() => {
-    // Update localStorage
-    localStorage.setItem('language', language);
+  const t = (key: string, options?: Record<string, any>): string => {
+    // Split the key by dots to access nested properties
+    const keys = key.split('.');
     
-    // Update i18n language
-    i18n.changeLanguage(language);
+    // Get the translation or fallback to English
+    let translation = keys.reduce(
+      (obj, k) => (obj && obj[k] !== undefined ? obj[k] : undefined),
+      translations[language] as any
+    ) || keys.reduce(
+      (obj, k) => (obj && obj[k] !== undefined ? obj[k] : undefined),
+      translations.en as any
+    );
     
-    // Update document properties
-    document.documentElement.lang = language;
+    // If no translation found, return the key
+    if (translation === undefined) {
+      return key;
+    }
     
-    const loadTranslations = async () => {
-      try {
-        const langFile = await import(`../../languages/${language}.json`);
-        setTranslations(langFile.default);
-      } catch (error) {
-        console.error('Failed to load translations:', error);
-      }
-    };
-    
-    loadTranslations();
-  }, [language, i18n]);
-
-  const t = (key: string, params?: Record<string, any>): string => {
-    let value = key.split('.').reduce((obj, part) => obj?.[part], translations) || key;
-    
-    // Handle interpolation if params are provided
-    if (params && typeof value === 'string') {
-      Object.entries(params).forEach(([paramKey, paramValue]) => {
-        value = value.replace(new RegExp(`{{${paramKey}}}`, 'g'), String(paramValue));
+    // Replace variables in the translation
+    if (options) {
+      Object.keys(options).forEach(option => {
+        translation = translation.replace(
+          new RegExp(`{{${option}}}`, 'g'),
+          options[option]
+        );
       });
     }
     
-    return String(value);
+    return translation;
+  };
+
+  // Get text direction based on language
+  const direction = language === 'ar' ? 'rtl' : 'ltr';
+
+  // Context value
+  const value = {
+    language,
+    setLanguage,
+    t,
+    direction
   };
 
   return (
-    <TranslationContext.Provider value={{ language, setLanguage, t }}>
+    <TranslationContext.Provider value={value}>
       {children}
     </TranslationContext.Provider>
   );

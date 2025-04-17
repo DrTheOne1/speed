@@ -16,31 +16,36 @@
     }
   },
   "sendSMS": {
-    "title": "Send SMS",
-    "description": "Send individual SMS messages to your contacts",
-    "messageDetails": "Message Details",
-    "fillDetails": "Fill in the message details below",
-    "availableCredits": "Available Credits",
-    "sender": "Sender ID",
-    "recipient": "Recipient",
-    "message": "Message",
-    "schedule": "Schedule Message",
-    "characters": "Characters:",
-    "submit": "Send Message",
-    "loading": "Sending...",
-    "insufficientCredits": "Insufficient Credits",
-    "purchaseCredits": "Please purchase more credits to send messages",
-    "placeholders": {
-      "sender": "Select sender ID",
-      "recipient": "Enter phone number",
-      "message": "Type your message here",
-      "schedule": "Select date and time"
-    },
+    "title": "Send SMS Message",
+    "recipientLabel": "Recipient",
+    "recipientPlaceholder": "Enter phone number",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Type your message here",
+    "charactersRemaining": "{{count}} characters remaining",
+    "messageWillBeSplit": "Message will be split into {{count}} SMS",
+    "sendButton": "Send Message",
+    "sendingButton": "Sending...",
+    "selectContacts": "Select from Contacts",
+    "scheduleSend": "Schedule Send",
+    "now": "Now",
+    "schedule": "Schedule",
+    "scheduledFor": "Scheduled for",
+    "templates": "Templates",
+    "useTemplate": "Use Template",
+    "success": "Message sent successfully",
+    "error": "Failed to send message",
     "validation": {
-      "sender": "Sender ID is required",
-      "recipient": "Recipient is required",
-      "message": "Message is required",
-      "maxLength": "Message must be less than 800 characters"
+      "recipientRequired": "Recipient is required",
+      "invalidPhone": "Invalid phone number format",
+      "messageRequired": "Message is required",
+      "messageEmpty": "Message cannot be empty"
+    },
+    "confirmation": {
+      "title": "Confirm Sending",
+      "message": "Send SMS to {{recipient}}?",
+      "cost": "This will use {{count}} credit(s)",
+      "confirm": "Send",
+      "cancel": "Cancel"
     }
   },
   "credits": {
@@ -87,5 +92,49 @@
       "yearly": "Yearly",
       "quarterly": "Quarterly"
     }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}",
+    "summary": "Account Summary",
+    "credits": {
+      "title": "Available Credits",
+      "remaining": "{{count}} credits remaining",
+      "low": "Your credits are running low"
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "empty": "No recent activity",
+      "seeAll": "See all activity"
+    },
+    "stats": {
+      "title": "Performance",
+      "sent": "Messages Sent",
+      "delivered": "Delivery Rate",
+      "failed": "Failed"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "send": "Send Message",
+      "contacts": "Manage Contacts",
+      "templates": "SMS Templates",
+      "billing": "Billing & Subscription"
+    },
+    "alerts": {
+      "title": "Notifications",
+      "empty": "No new notifications"
+    }
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "sendSMS": "Send SMS",
+    "campaigns": "Campaigns",
+    "contacts": "Contacts",
+    "templates": "Templates",
+    "analytics": "Analytics",
+    "billing": "Billing",
+    "settings": "Settings",
+    "help": "Help & Support",
+    "logout": "Log Out"
   }
 }
