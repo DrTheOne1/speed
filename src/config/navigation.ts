@@ -26,47 +26,47 @@ interface NavigationItem {
 }
 
 export const userNavigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'navigation.dashboard', href: '/', icon: Home },
   { 
-    name: 'Messaging',
+    name: 'navigation.messaging',
     icon: MessageSquare,
     children: [
-      { name: 'Send SMS', href: '/send', icon: MessageSquare },
-      { name: 'Bulk Send', href: '/bulk-send', icon: Upload },
-      { name: 'Scheduled', href: '/scheduled', icon: Clock },
-      { name: 'Messages', href: '/messages', icon: MessageSquare },
+      { name: 'navigation.sendSMS', href: '/send', icon: MessageSquare },
+      { name: 'navigation.bulkSend', href: '/bulk-send', icon: Upload },
+      { name: 'navigation.scheduled', href: '/scheduled', icon: Clock },
+      { name: 'navigation.messages', href: '/messages', icon: MessageSquare },
     ]
   },
   {
-    name: 'Contacts',
+    name: 'navigation.contacts',
     icon: Users,
     children: [
-      { name: 'All Contacts', href: '/contacts', icon: Users },
-      { name: 'Groups', href: '/groups', icon: UserPlus },
-      { name: 'Import', href: '/import-contacts', icon: Upload },
+      { name: 'navigation.allContacts', href: '/contacts', icon: Users },
+      { name: 'navigation.groups', href: '/groups', icon: UserPlus },
+      { name: 'navigation.import', href: '/import-contacts', icon: Upload },
     ]
   },
-  { name: 'Templates', href: '/templates', icon: FileText },
+  { name: 'navigation.templates', href: '/templates', icon: FileText },
   {
-    name: 'Reports',
+    name: 'navigation.reports',
     icon: BarChart2,
     children: [
-      { name: 'Analytics', href: '/analytics', icon: BarChart2 },
-      { name: 'Usage', href: '/usage', icon: CreditCard },
-      { name: 'Billing', href: '/billing', icon: CreditCard },
+      { name: 'navigation.analytics', href: '/analytics', icon: BarChart2 },
+      { name: 'navigation.usage', href: '/usage', icon: CreditCard },
+      { name: 'navigation.billing', href: '/billing', icon: CreditCard },
     ]
   },
-  { name: 'Settings', href: '/settings', icon: Settings }
+  { name: 'navigation.settings', href: '/settings', icon: Settings }
 ];
 
 export const adminNavigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/admin', icon: Home },
-  { name: 'User Management', href: '/admin/users', icon: UserCog },
-  { name: 'Gateway Management', href: '/admin/gateways', icon: Server },
-  { name: 'Gateway Routes', href: '/admin/gateway-routes', icon: Route },
-  { name: 'Gateway Logs', href: '/admin/gateway-logs', icon: Activity },
-  { name: 'Test SMS', href: '/admin/test-sms', icon: Send },
-  { name: 'Payment Methods', href: '/admin/payment-methods', icon: Wallet },
-  { name: 'Subscription Plans', href: '/admin/subscription-plans', icon: Package },
-  { name: 'Messages', href: '/admin/messages', icon: MessageSquare },
+  { name: 'navigation.adminDashboard', href: '/admin', icon: Home },
+  { name: 'navigation.userManagement', href: '/admin/users', icon: UserCog },
+  { name: 'navigation.gatewayManagement', href: '/admin/gateways', icon: Server },
+  { name: 'navigation.gatewayRoutes', href: '/admin/gateway-routes', icon: Route },
+  { name: 'navigation.gatewayLogs', href: '/admin/gateway-logs', icon: Activity },
+  { name: 'navigation.testSMS', href: '/admin/test-sms', icon: Send },
+  { name: 'navigation.paymentMethods', href: '/admin/payment-methods', icon: Wallet },
+  { name: 'navigation.subscriptionPlans', href: '/admin/subscription-plans', icon: Package },
+  { name: 'navigation.messages', href: '/admin/messages', icon: MessageSquare },
 ];

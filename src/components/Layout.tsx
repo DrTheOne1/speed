@@ -6,13 +6,15 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import Sidebar from './Sidebar';
 import LanguageSelector from './LanguageSelector';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '../contexts/TranslationContext';
+import { classNames } from '../utils/classNames';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const { language } = useTranslation();
+  const isRTL = language === 'ar';
 
   const { data: isAdmin } = useQuery({
     queryKey: ['user-role'],
@@ -52,18 +54,27 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className={classNames(
+      "min-h-screen bg-gray-100",
+      isRTL ? "rtl" : "ltr"
+    )}>
       <Sidebar
         isAdmin={isAdmin}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
-      <div className="lg:pl-72">
+      <div className={classNames(
+        "transition-all duration-300",
+        isRTL ? "lg:pr-72" : "lg:pl-72"
+      )}>
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+            className={classNames(
+              "-m-2.5 p-2.5 text-gray-700 lg:hidden",
+              isRTL ? "ml-auto" : "mr-auto"
+            )}
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" aria-hidden="true" />

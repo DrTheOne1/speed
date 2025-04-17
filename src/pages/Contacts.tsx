@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PhoneInput from '../components/PhoneInput';
+import { useTranslation } from '../contexts/TranslationContext';
 
 export default function Contacts() {
+  const { t } = useTranslation();
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [newContact, setNewContact] = useState({ name: '', phone_number: '' });
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export default function Contacts() {
       refetch();
     } catch (err: any) {
       console.error('Error adding contact:', err);
-      setError(err.message || 'Failed to add contact');
+      setError(t('contacts.error.add'));
     }
   };
 
@@ -53,7 +55,7 @@ export default function Contacts() {
       refetch();
     } catch (err: any) {
       console.error('Error deleting contact:', err);
-      setError(err.message || 'Failed to delete contact');
+      setError(t('contacts.error.delete'));
     }
   };
 
@@ -61,9 +63,9 @@ export default function Contacts() {
     <div>
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Contacts</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('contacts.title')}</h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage your contact list for sending messages
+            {t('contacts.description')}
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
@@ -73,7 +75,7 @@ export default function Contacts() {
             className="flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Contact
+            {t('contacts.actions.add')}
           </button>
         </div>
       </div>
@@ -82,7 +84,7 @@ export default function Contacts() {
         <div className="mt-4 rounded-md bg-red-50 p-4">
           <div className="flex">
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <h3 className="text-sm font-medium text-red-800">{t('contacts.error.title')}</h3>
               <div className="mt-2 text-sm text-red-700">{error}</div>
             </div>
           </div>
@@ -93,7 +95,7 @@ export default function Contacts() {
         <form onSubmit={handleAddContact} className="mt-6 space-y-4 bg-white p-4 rounded-lg shadow">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Name
+              {t('contacts.form.name')}
             </label>
             <input
               type="text"
@@ -106,7 +108,7 @@ export default function Contacts() {
           </div>
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-              Phone Number
+              {t('contacts.form.phone')}
             </label>
             <PhoneInput
               value={newContact.phone_number}
@@ -119,13 +121,13 @@ export default function Contacts() {
               onClick={() => setIsAddingContact(false)}
               className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             >
-              Cancel
+              {t('contacts.form.cancel')}
             </button>
             <button
               type="submit"
               className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
             >
-              Save
+              {t('contacts.form.save')}
             </button>
           </div>
         </form>
@@ -139,13 +141,13 @@ export default function Contacts() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Name
+                      {t('contacts.listSection.table.name')}
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Phone Number
+                      {t('contacts.listSection.table.phone')}
                     </th>
                     <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{t('contacts.listSection.table.actions')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -162,10 +164,14 @@ export default function Contacts() {
                         <button
                           onClick={() => handleDeleteContact(contact.id)}
                           className="text-red-600 hover:text-red-900 mr-4"
+                          title={t('contacts.actions.delete')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                        <button className="text-indigo-600 hover:text-indigo-900">
+                        <button 
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title={t('contacts.actions.edit')}
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
                       </td>

@@ -23,37 +23,64 @@ const translations = {
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
 export const TranslationProvider = ({ children }: { children: React.ReactNode }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('en');
+
+  const setLanguage = (lang: Language) => {
+    console.log('Language changed to:', lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang);
+    }
+    setLanguageState(lang);
+  };
 
   const t = (key: string, options?: Record<string, any>): string => {
-    // Split the key by dots to access nested properties
-    const keys = key.split('.');
-    
-    // Get the translation or fallback to English
-    let translation = keys.reduce(
-      (obj, k) => (obj && obj[k] !== undefined ? obj[k] : undefined),
-      translations[language] as any
-    ) || keys.reduce(
-      (obj, k) => (obj && obj[k] !== undefined ? obj[k] : undefined),
-      translations.en as any
-    );
-    
-    // If no translation found, return the key
-    if (translation === undefined) {
+    try {
+      // Split the key by dots
+      const keys = key.split('.');
+      
+      // Try to get translation from current language
+      let result: any = translations[language];
+      for (const k of keys) {
+        if (!result || typeof result !== 'object') {
+          result = undefined;
+          break;
+        }
+        result = result[k];
+      }
+      
+      // If not found, try English
+      if (result === undefined && language !== 'en') {
+        result = translations.en;
+        for (const k of keys) {
+          if (!result || typeof result !== 'object') {
+            result = undefined;
+            break;
+          }
+          result = result[k];
+        }
+      }
+      
+      // If still not found, log a warning and return the key
+      if (result === undefined) {
+        console.warn(`Translation not found: ${key}`); // Add this line to debug
+        return key.split('.').pop() || key;
+      }
+      
+      // Replace variables in the translation
+      if (options) {
+        Object.keys(options).forEach(option => {
+          result = result.replace(
+            new RegExp(`{{${option}}}`, 'g'),
+            options[option]
+          );
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error in translation function: ${error}`);
       return key;
     }
-    
-    // Replace variables in the translation
-    if (options) {
-      Object.keys(options).forEach(option => {
-        translation = translation.replace(
-          new RegExp(`{{${option}}}`, 'g'),
-          options[option]
-        );
-      });
-    }
-    
-    return translation;
   };
 
   // Get text direction based on language

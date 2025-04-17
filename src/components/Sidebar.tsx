@@ -4,6 +4,14 @@ import { Disclosure } from '@headlessui/react';
 import { MessageSquare, X, ChevronDown } from 'lucide-react';
 import { classNames } from '../utils/classNames';
 import { adminNavigation, userNavigation } from '../config/navigation';
+import { useTranslation } from '../contexts/TranslationContext';
+
+interface NavigationItem {
+  name: string;
+  href?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children?: NavigationItem[];
+}
 
 interface SidebarProps {
   isAdmin?: boolean;
@@ -13,12 +21,11 @@ interface SidebarProps {
 
 export default function Sidebar({ isAdmin, sidebarOpen, setSidebarOpen }: SidebarProps) {
   const location = useLocation();
+  const { t, language } = useTranslation();
   const navigation = isAdmin ? adminNavigation : userNavigation;
+  const isRTL = language === 'ar';
 
-  const isActive = (href?: string) => {
-    if (!href) return false;
-    return location.pathname === href;
-  };
+  const isActive = (path?: string) => path && location.pathname === path;
 
   return (
     <>
@@ -32,10 +39,12 @@ export default function Sidebar({ isAdmin, sidebarOpen, setSidebarOpen }: Sideba
 
       <div
         className={classNames(
-          'fixed inset-y-0 left-0 z-50 w-72 overflow-y-auto bg-white px-4 pb-4 sm:px-6 lg:px-8',
+          'fixed inset-y-0 z-50 w-72 overflow-y-auto bg-white px-4 pb-4 sm:px-6 lg:px-8',
           'transform transition-transform duration-300 ease-in-out lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          isRTL ? 'right-0' : 'left-0',
+          sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
         )}
+        dir={isRTL ? 'rtl' : 'ltr'}
       >
         <div className="flex h-16 shrink-0 items-center">
           <Link to="/" className="flex items-center gap-2">
@@ -44,7 +53,10 @@ export default function Sidebar({ isAdmin, sidebarOpen, setSidebarOpen }: Sideba
           </Link>
           <button
             type="button"
-            className="ml-auto lg:hidden"
+            className={classNames(
+              'lg:hidden',
+              isRTL ? 'mr-auto' : 'ml-auto'
+            )}
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-6 w-6" />
@@ -53,26 +65,27 @@ export default function Sidebar({ isAdmin, sidebarOpen, setSidebarOpen }: Sideba
 
         <nav className="mt-8">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
-            {navigation.map((item) => (
+            {navigation.map((item: NavigationItem) => (
               <li key={item.name}>
-                {item.children ? (
-                  <Disclosure as="div" defaultOpen={item.children.some(child => isActive(child.href))}>
+                {Array.isArray(item.children) && item.children.length > 0 ? (
+                  <Disclosure as="div" defaultOpen={item.children.some((child: NavigationItem) => isActive(child.href))}>
                     {({ open }) => (
                       <>
                         <Disclosure.Button
                           className="flex w-full items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-indigo-600"
                         >
                           <item.icon className="h-5 w-5 shrink-0" />
-                          {item.name}
+                          {t(item.name)}
                           <ChevronDown
                             className={classNames(
-                              'ml-auto h-5 w-5 shrink-0 transition-transform',
+                              isRTL ? 'mr-auto' : 'ml-auto',
+                              'h-5 w-5 shrink-0 transition-transform',
                               open && 'rotate-180'
                             )}
                           />
                         </Disclosure.Button>
                         <Disclosure.Panel className="mt-1 space-y-1 px-2">
-                          {item.children.map((subItem) => (
+                          {item.children.map((subItem: NavigationItem) => (
                             <Link
                               key={subItem.name}
                               to={subItem.href || ''}
@@ -84,7 +97,7 @@ export default function Sidebar({ isAdmin, sidebarOpen, setSidebarOpen }: Sideba
                               )}
                             >
                               <subItem.icon className="h-5 w-5 shrink-0" />
-                              {subItem.name}
+                              {t(subItem.name)}
                             </Link>
                           ))}
                         </Disclosure.Panel>
@@ -102,7 +115,7 @@ export default function Sidebar({ isAdmin, sidebarOpen, setSidebarOpen }: Sideba
                     )}
                   >
                     <item.icon className="h-5 w-5 shrink-0" />
-                    {item.name}
+                    {t(item.name)}
                   </Link>
                 )}
               </li>

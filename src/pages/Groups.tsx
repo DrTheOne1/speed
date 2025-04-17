@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Trash2, Edit, Users } from 'lucide-react';
+import { Plus, Trash2, Edit, Users, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from '../contexts/TranslationContext';
+import toast from 'react-hot-toast';
 
 export default function Groups() {
+  const { t } = useTranslation();
   const [isAddingGroup, setIsAddingGroup] = useState(false);
+  const [isEditingGroup, setIsEditingGroup] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', description: '' });
+  const [editingGroup, setEditingGroup] = useState<{ id: string; name: string; description: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const { data: groups, refetch } = useQuery({
     queryKey: ['groups'],
@@ -23,6 +29,7 @@ export default function Groups() {
   const handleAddGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setError(null);
       const { error } = await supabase
         .from('groups')
         .insert([newGroup]);
@@ -32,14 +39,42 @@ export default function Groups() {
       setNewGroup({ name: '', description: '' });
       setIsAddingGroup(false);
       refetch();
+      toast.success(t('contacts.groups.success.added'));
     } catch (error) {
       console.error('Error adding group:', error);
-      alert('Failed to add group');
+      setError(t('contacts.error.groupAdd'));
+    }
+  };
+
+  const handleEditGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGroup) return;
+
+    try {
+      setError(null);
+      const { error } = await supabase
+        .from('groups')
+        .update({
+          name: editingGroup.name,
+          description: editingGroup.description
+        })
+        .eq('id', editingGroup.id);
+
+      if (error) throw error;
+
+      setEditingGroup(null);
+      setIsEditingGroup(false);
+      refetch();
+      toast.success(t('contacts.groups.success.updated'));
+    } catch (error) {
+      console.error('Error updating group:', error);
+      setError(t('contacts.error.groupUpdate'));
     }
   };
 
   const handleDeleteGroup = async (id: string) => {
     try {
+      setError(null);
       const { error } = await supabase
         .from('groups')
         .delete()
@@ -47,19 +82,29 @@ export default function Groups() {
 
       if (error) throw error;
       refetch();
+      toast.success(t('contacts.groups.success.deleted'));
     } catch (error) {
       console.error('Error deleting group:', error);
-      alert('Failed to delete group');
+      setError(t('contacts.error.groupDelete'));
     }
+  };
+
+  const startEditing = (group: any) => {
+    setEditingGroup({
+      id: group.id,
+      name: group.name,
+      description: group.description
+    });
+    setIsEditingGroup(true);
   };
 
   return (
     <div>
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Contact Groups</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('contacts.groups.title')}</h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage your contact groups for bulk messaging
+            {t('contacts.description')}
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
@@ -69,16 +114,27 @@ export default function Groups() {
             className="flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Group
+            {t('contacts.groups.add')}
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="mt-4 rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">{t('contacts.error.title')}</h3>
+              <div className="mt-2 text-sm text-red-700">{error}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isAddingGroup && (
         <form onSubmit={handleAddGroup} className="mt-6 space-y-4 bg-white p-4 rounded-lg shadow">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Group Name
+              {t('contacts.groups.name')}
             </label>
             <input
               type="text"
@@ -91,7 +147,7 @@ export default function Groups() {
           </div>
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-              Description
+              {t('contacts.groups.description')}
             </label>
             <textarea
               id="description"
@@ -107,16 +163,81 @@ export default function Groups() {
               onClick={() => setIsAddingGroup(false)}
               className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             >
-              Cancel
+              {t('contacts.groups.cancel')}
             </button>
             <button
               type="submit"
               className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
             >
-              Save
+              {t('contacts.groups.save')}
             </button>
           </div>
         </form>
+      )}
+
+      {isEditingGroup && editingGroup && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-25" onClick={() => setIsEditingGroup(false)} />
+            
+            <div className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {t('contacts.groups.edit')}
+                </h3>
+                <button
+                  onClick={() => setIsEditingGroup(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditGroup} className="space-y-4">
+                <div>
+                  <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">
+                    {t('contacts.groups.name')}
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-name"
+                    value={editingGroup.name}
+                    onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700">
+                    {t('contacts.groups.description')}
+                  </label>
+                  <textarea
+                    id="edit-description"
+                    rows={3}
+                    value={editingGroup.description}
+                    onChange={(e) => setEditingGroup({ ...editingGroup, description: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingGroup(false)}
+                    className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                  >
+                    {t('contacts.groups.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                  >
+                    {t('contacts.groups.save')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="mt-8 flow-root">
@@ -127,16 +248,16 @@ export default function Groups() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Name
+                      {t('contacts.groups.name')}
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Description
+                      {t('contacts.groups.description')}
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Members
+                      {t('contacts.groups.members')}
                     </th>
                     <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{t('contacts.listSection.table.actions')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -159,10 +280,15 @@ export default function Groups() {
                         <button
                           onClick={() => handleDeleteGroup(group.id)}
                           className="text-red-600 hover:text-red-900 mr-4"
+                          title={t('contacts.groups.delete')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                        <button className="text-indigo-600 hover:text-indigo-900">
+                        <button 
+                          onClick={() => startEditing(group)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title={t('contacts.groups.edit')}
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
                       </td>

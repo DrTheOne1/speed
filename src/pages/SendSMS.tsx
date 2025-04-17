@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useTranslation } from '../contexts/TranslationContext';
 import { Clock, Send, Users, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { classNames } from '../utils/classNames';
 
 interface SendSMSFormData {
   recipient: string;
@@ -26,9 +27,10 @@ export default function SendSMS() {
     scheduled: false,
   });
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [charactersRemaining, setCharactersRemaining] = useState(160);
+  const [charactersRemaining, setCharactersRemaining] = useState(800);
   const [messageSegments, setMessageSegments] = useState(1);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
 
   // Get user templates
   useEffect(() => {
@@ -49,8 +51,11 @@ export default function SendSMS() {
   // Calculate characters remaining and message segments
   useEffect(() => {
     const charCount = formData.message.length;
-    const singleMessageLimit = 160;
-    const multiMessageLimit = 153; // Characters per segment in multi-part messages
+    const isArabic = /[\u0600-\u06FF]/.test(formData.message); // Check if message contains Arabic characters
+    
+    // Character limits based on language
+    const singleMessageLimit = isArabic ? 70 : 160;
+    const multiMessageLimit = isArabic ? 68 : 153; // Characters per segment in multi-part messages
     
     let remaining = singleMessageLimit - charCount;
     let segments = 1;
@@ -63,6 +68,22 @@ export default function SendSMS() {
     setCharactersRemaining(remaining);
     setMessageSegments(segments);
   }, [formData.message]);
+
+  // Calculate message points based on segments
+  const calculateMessagePoints = (segments: number) => {
+    return segments; // Each segment equals one point
+  };
+
+  // Log language and templates title translation
+  useEffect(() => {
+    console.log('Current language:', language);
+    console.log('Templates title translation:', t('sendSMS.templatesTitle'));
+  }, [language, t]);
+
+  // Force re-render when language changes
+  useEffect(() => {
+    setRenderKey(prev => prev + 1);
+  }, [language]);
 
   // Send SMS mutation
   const sendSMSMutation = useMutation({
@@ -114,8 +135,8 @@ export default function SendSMS() {
   };
 
   return (
-    <div className={`container mx-auto px-4 py-8 ${direction}`}>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className={`container mx-auto px-4 py-8 ${direction}`} key={`sms-container-${language}`}>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6" key={`sms-title-${language}`}>
         {t('sendSMS.title')}
       </h1>
       
@@ -141,10 +162,18 @@ export default function SendSMS() {
                 />
                 <button
                   type="button"
-                  className="ms-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  className={classNames(
+                    "ms-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50",
+                    direction === 'rtl' ? 'flex-row-reverse' : ''
+                  )}
                 >
                   <Users className="h-5 w-5 text-gray-400" />
-                  <span className="ml-2">{t('sendSMS.selectContacts')}</span>
+                  <span className={classNames(
+                    "text-gray-700",
+                    direction === 'rtl' ? 'ml-0 mr-3' : 'ml-3'
+                  )}>
+                    {t('sendSMS.selectContacts')}
+                  </span>
                 </button>
               </div>
             </div>
@@ -166,10 +195,19 @@ export default function SendSMS() {
                   required
                 ></textarea>
                 <div className="mt-2 flex justify-between text-sm text-gray-500">
-                  <div>{t('sendSMS.charactersRemaining', { count: charactersRemaining })}</div>
-                  {messageSegments > 1 && (
-                    <div>{t('sendSMS.messageWillBeSplit', { count: messageSegments })}</div>
-                  )}
+                  <div>
+                    {t('sendSMS.charactersRemaining', { count: charactersRemaining })}
+                  </div>
+                  <div>
+                    {messageSegments > 1 && (
+                      <>
+                        {t('sendSMS.messageWillBeSplit', { count: messageSegments })}
+                        <span className="ml-2">
+                          ({t('sendSMS.messagePoints', { points: calculateMessagePoints(messageSegments) })})
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -177,33 +215,36 @@ export default function SendSMS() {
             {/* Schedule Option */}
             <div>
               <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-700">{t('sendSMS.scheduleSend')}</span>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="schedule-now"
-                    name="schedule"
-                    checked={!formData.scheduled}
-                    onChange={() => setFormData({...formData, scheduled: false})}
-                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                  />
-                  <label htmlFor="schedule-now" className="block text-sm text-gray-700">
-                    {t('sendSMS.now')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="schedule-later"
-                    name="schedule"
-                    checked={formData.scheduled}
-                    onChange={() => setFormData({...formData, scheduled: true})}
-                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                  />
-                  <label htmlFor="schedule-later" className="block text-sm text-gray-700">
-                    {t('sendSMS.schedule')}
-                  </label>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, scheduled: false})}
+                  className={classNames(
+                    "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md",
+                    formData.scheduled ? "text-gray-700 bg-white hover:bg-gray-50" : "text-white bg-indigo-600 hover:bg-indigo-700"
+                  )}
+                >
+                  <Send className="h-5 w-5" />
+                  <span className={classNames(
+                    direction === 'rtl' ? 'ml-0 mr-3' : 'ml-3'
+                  )}>
+                    {t('sendSMS.scheduleNow')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, scheduled: true})}
+                  className={classNames(
+                    "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md",
+                    formData.scheduled ? "text-white bg-indigo-600 hover:bg-indigo-700" : "text-gray-700 bg-white hover:bg-gray-50"
+                  )}
+                >
+                  <Clock className="h-5 w-5" />
+                  <span className={classNames(
+                    direction === 'rtl' ? 'ml-0 mr-3' : 'ml-3'
+                  )}>
+                    {t('sendSMS.scheduleLater')}
+                  </span>
+                </button>
               </div>
 
               {formData.scheduled && (
@@ -223,13 +264,19 @@ export default function SendSMS() {
             </div>
 
             {/* Submit Button */}
-            <div>
+            <div className="flex justify-end">
               <button
                 type="submit"
+                className={classNames(
+                  "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+                  direction === 'rtl' ? 'flex-row-reverse' : ''
+                )}
                 disabled={sendSMSMutation.isPending}
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
               >
-                <Send className="h-5 w-5 mr-2" />
+                <Send className={classNames(
+                  "h-5 w-5",
+                  direction === 'rtl' ? 'ml-2' : 'mr-2'
+                )} />
                 {t('sendSMS.sendButton')}
               </button>
             </div>
@@ -237,24 +284,28 @@ export default function SendSMS() {
         </div>
 
         {/* Templates */}
-        <div>
-          <div className="bg-white p-6 rounded-lg shadow space-y-4">
-            <h2 className="text-lg font-medium text-gray-900">{t('sendSMS.templatesTitle')}</h2>
-            <ul className="space-y-2">
-              {templates.map(template => (
-                <li key={template.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleTemplateSelect(template.id)}
-                    className="w-full text-left px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    <FileText className="h-5 w-5 mr-2 text-gray-400" />
-                    {template.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
+        <div className="bg-white p-6 rounded-lg shadow" key={`templates-${renderKey}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-gray-900">
+              {t('sendSMS.templatesTitle')}
+            </h2>
+            <FileText className="h-5 w-5 text-gray-400" />
           </div>
+
+          <ul className="space-y-2">
+            {templates.map(template => (
+              <li key={template.id}>
+                <button
+                  type="button"
+                  onClick={() => handleTemplateSelect(template.id)}
+                  className="w-full text-left px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <FileText className="h-5 w-5 mr-2 text-gray-400" />
+                  {template.name}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 

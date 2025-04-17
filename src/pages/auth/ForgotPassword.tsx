@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 
 export default function ForgotPassword() {
@@ -9,6 +10,7 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { resetPassword } = useAuth();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +19,7 @@ export default function ForgotPassword() {
 
     try {
       await resetPassword(email);
-      toast.success('Password reset instructions sent to your email!');
+      toast.success(t('auth.resetPasswordSuccess'), {});
     } catch (error: any) {
       setError(error.message);
       toast.error(error.message);
@@ -30,9 +32,9 @@ export default function ForgotPassword() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Reset Password</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('auth.resetPassword')}</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Enter your email to receive reset instructions
+            {t('auth.resetPasswordInstructions')}
           </p>
         </div>
 
@@ -61,13 +63,13 @@ export default function ForgotPassword() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Email address"
+                placeholder={t('auth.email')}
               />
               <label
                 htmlFor="email"
                 className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-2.5 peer-focus:text-gray-700"
               >
-                Email address
+                {t('auth.email')}
               </label>
             </div>
 
@@ -79,20 +81,20 @@ export default function ForgotPassword() {
               {loading ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                  Sending...
+                  {t('auth.sending')}
                 </>
               ) : (
-                'Send Reset Instructions'
+                t('auth.sendResetInstructions')
               )}
             </button>
           </form>
 
           <div className="mt-4 text-center space-y-2">
             <Link to="/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 block">
-              Back to Login
+              {t('auth.backToLogin')}
             </Link>
             <Link to="/register" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 block">
-              Create an account
+              {t('auth.createAccount')}
             </Link>
           </div>
         </div>

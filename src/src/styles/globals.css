@@ -1,0 +1,96 @@
+/* RTL Support */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.rtl .flex, 
+.rtl .flex-row {
+  flex-direction: row-reverse;
+}
+
+.rtl .space-x-4 > * {
+  margin-right: 1rem;
+  margin-left: 0;
+}
+
+.rtl .space-x-4 > * + * {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+.rtl .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.rtl .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.rtl .mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+.rtl .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Ensure icons are not flipped */
+.rtl svg {
+  transform: scaleX(-1);
+}
+
+/* RTL Support for Input and TextArea */
+.rtl input[type="text"],
+.rtl textarea {
+  text-align: right;
+}
+
+/* Button styles for RTL */
+.rtl button svg {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+/* RTL Navigation Fixes */
+.rtl .md\:translate-x-0 {
+  --tw-translate-x: 0px;
+}
+
+.rtl .-translate-x-full {
+  --tw-translate-x: 100%;
+}
+
+.rtl .translate-x-0 {
+  --tw-translate-x: 0px;
+}
+
+/* Fix icon spacing for RTL */
+.rtl .mr-3 {
+  margin-right: 0;
+  margin-left: 0.75rem;
+}
+
+.rtl .ml-3 {
+  margin-left: 0;
+  margin-right: 0.75rem;
+}
+
+/* Language selector RTL fixes */
+.rtl .mr-1 {
+  margin-right: 0;
+  margin-left: 0.25rem;
+}
+
+.rtl .origin-top-right {
+  transform-origin: top left;
+}
+
+.rtl .right-0 {
+  right: auto;
+  left: 0;
+}

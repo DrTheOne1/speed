@@ -3,7 +3,7 @@
     "title": "تسجيل الدخول",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
-    "submit": "دخول",
+    "submit": "تسجيل الدخول",
     "remember": "تذكرني",
     "forgot": "نسيت كلمة المرور؟"
   },
@@ -46,7 +46,8 @@
       "cost": "سيستخدم هذا {{count}} رصيد",
       "confirm": "إرسال",
       "cancel": "إلغاء"
-    }
+    },
+    "templatesTitle": "قوالب"
   },
   "billing": {
     "title": "الفواتير والاشتراكات",
@@ -147,5 +148,96 @@
     "settings": "الإعدادات",
     "help": "المساعدة والدعم",
     "logout": "تسجيل الخروج"
+  },
+  "messages": {
+    "title": "الرسائل",
+    "inbox": "صندوق الوارد",
+    "sent": "المرسلة",
+    "scheduled": "المجدولة",
+    "draft": "المسودات",
+    "search": "بحث في الرسائل",
+    "noMessages": "لم يتم العثور على رسائل",
+    "loadingMessages": "جاري تحميل الرسائل...",
+    "filter": "تصفية الرسائل",
+    "sortBy": "ترتيب حسب",
+    "date": "التاريخ",
+    "status": "الحالة",
+    "recipient": "المستلم",
+    "actions": "إجراءات",
+    "view": "عرض",
+    "delete": "حذف",
+    "resend": "إعادة إرسال",
+    "messageDetails": "تفاصيل الرسالة",
+    "deliveryStatus": {
+      "delivered": "تم التسليم",
+      "sent": "تم الإرسال",
+      "failed": "فشل",
+      "pending": "قيد الانتظار",
+      "scheduled": "مجدول"
+    },
+    "deleteConfirm": "هل أنت متأكد أنك تريد حذف هذه الرسالة؟",
+    "messageSent": "تم إرسال الرسالة في",
+    "messageScheduled": "مجدولة في",
+    "viewAll": "عرض كل الرسائل",
+    "navigation": {
+      "tabs": {
+        "inbox": "صندوق الوارد",
+        "sent": "المرسلة",
+        "scheduled": "المجدولة",
+        "draft": "المسودات"
+      }
+    },
+    "table": {
+      "header": {
+        "date": "التاريخ",
+        "recipient": "المستلم",
+        "status": "الحالة",
+        "actions": "إجراءات"
+      }
+    }
+  },
+  "bulkSend": {
+    "title": "إرسال جماعي",
+    "description": "إرسال رسائل إلى عدة مستلمين",
+    "uploadSection": {
+      "title": "تحميل المستلمين",
+      "description": "قم بتحميل ملف CSV أو الصق الأرقام",
+      "dragDrop": "اسحب وأفلت ملف CSV هنا أو",
+      "browse": "تصفح الملفات",
+      "paste": "الصق الأرقام",
+      "template": "تحميل النموذج"
+    },
+    "messageSection": {
+      "title": "محتوى الرسالة",
+      "placeholder": "اكتب رسالتك هنا",
+      "variables": "المتغيرات المتاحة",
+      "preview": "معاينة الرسالة"
+    },
+    "recipientCount": "{{count}} مستلم",
+    "estimatedCost": "التكلفة المقدرة: {{credits}} رصيد",
+    "schedule": {
+      "title": "جدولة التسليم",
+      "now": "إرسال الآن",
+      "later": "جدولة لوقت لاحق",
+      "datetime": "اختر التاريخ والوقت"
+    },
+    "submit": "إرسال الرسائل",
+    "sending": "جاري الإرسال...",
+    "validation": {
+      "messageRequired": "الرسالة مطلوبة",
+      "messageLength": "يجب أن تكون الرسالة أقل من 160 حرفًا",
+      "fileRequired": "الرجاء تحديد ملف CSV",
+      "invalidFormat": "تنسيق ملف غير صالح. يرجى استخدام CSV",
+      "invalidPhone": "تنسيق رقم الهاتف غير صالح"
+    },
+    "success": {
+      "scheduled": "تمت جدولة الرسائل بنجاح!",
+      "uploaded": "تم رفع الملف بنجاح"
+    },
+    "error": {
+      "generic": "فشل في إرسال الرسائل. حاول مرة أخرى.",
+      "upload": "فشل في رفع الملف",
+      "processing": "خطأ في معالجة الملف"
+    }
   }
 }

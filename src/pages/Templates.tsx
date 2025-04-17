@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from '../contexts/TranslationContext';
 
 export default function Templates() {
+  const { t } = useTranslation();
   const [isAddingTemplate, setIsAddingTemplate] = useState(false);
   const [newTemplate, setNewTemplate] = useState({ name: '', content: '' });
 
@@ -32,9 +34,10 @@ export default function Templates() {
       setNewTemplate({ name: '', content: '' });
       setIsAddingTemplate(false);
       refetch();
+      alert(t('templates.add.success'));
     } catch (error) {
       console.error('Error adding template:', error);
-      alert('Failed to add template');
+      alert(t('templates.add.error'));
     }
   };
 
@@ -47,9 +50,10 @@ export default function Templates() {
 
       if (error) throw error;
       refetch();
+      alert(t('templates.delete.success'));
     } catch (error) {
       console.error('Error deleting template:', error);
-      alert('Failed to delete template');
+      alert(t('templates.delete.error'));
     }
   };
 
@@ -57,9 +61,9 @@ export default function Templates() {
     <div>
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Message Templates</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('templates.title')}</h1>
           <p className="mt-2 text-sm text-gray-700">
-            Create and manage your message templates
+            {t('templates.description')}
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
@@ -69,7 +73,7 @@ export default function Templates() {
             className="flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Template
+            {t('templates.add.button')}
           </button>
         </div>
       </div>
@@ -78,7 +82,7 @@ export default function Templates() {
         <form onSubmit={handleAddTemplate} className="mt-6 space-y-4 bg-white p-4 rounded-lg shadow">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Template Name
+              {t('templates.add.title')}
             </label>
             <input
               type="text"
@@ -91,7 +95,7 @@ export default function Templates() {
           </div>
           <div>
             <label htmlFor="content" className="block text-sm font-medium text-gray-700">
-              Message Content
+              {t('templates.add.content')}
             </label>
             <textarea
               id="content"
@@ -108,13 +112,13 @@ export default function Templates() {
               onClick={() => setIsAddingTemplate(false)}
               className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             >
-              Cancel
+              {t('templates.add.cancel')}
             </button>
             <button
               type="submit"
               className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
             >
-              Save
+              {t('templates.add.save')}
             </button>
           </div>
         </form>
@@ -128,13 +132,13 @@ export default function Templates() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Name
+                      {t('templates.table.name')}
                     </th>
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Content
+                      {t('templates.table.content')}
                     </th>
                     <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{t('templates.table.actions')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -151,10 +155,14 @@ export default function Templates() {
                         <button
                           onClick={() => handleDeleteTemplate(template.id)}
                           className="text-red-600 hover:text-red-900 mr-4"
+                          title={t('templates.delete.button')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                        <button className="text-indigo-600 hover:text-indigo-900">
+                        <button 
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title={t('templates.edit.button')}
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
                       </td>
