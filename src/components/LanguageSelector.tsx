@@ -1,41 +1,68 @@
-import { useState } from 'react';
-import { Globe } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useTranslation } from 'react-i18next';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { useTranslation } from '../contexts/TranslationContext';
 
 const languages = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Español' },
-  { code: 'fr', name: 'Français' },
-  { code: 'de', name: 'Deutsch' },
-  { code: 'sv', name: 'Svenska' },
-  { code: 'ar', name: 'العربية' },
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+  { code: 'sv', name: 'Swedish', nativeName: 'Svenska' },
 ] as const;
 
 export default function LanguageSelector() {
-  const { currentLanguage, changeLanguage } = useLanguage();
-  const { t } = useTranslation();
+  const { language, setLanguage } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleLanguageChange = (langCode: string) => {
-    changeLanguage(langCode);
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedLanguage = languages.find(lang => lang.code === language);
 
   return (
-    <div className="relative inline-block text-left">
-      <div className="flex items-center">
-        <Globe className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-        <select
-          value={currentLanguage}
-          onChange={(e) => handleLanguageChange(e.target.value)}
-          className="appearance-none pl-8 pr-4 py-2 rounded-md bg-white text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    <div 
+      className="relative" 
+      ref={dropdownRef}
+    >
+      <button
+        type="button"
+        className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{selectedLanguage?.nativeName}</span>
+        <ChevronDown className="ml-2 h-4 w-4" />
+      </button>
+
+      {isOpen && (
+        <div 
+          className="absolute right-0 mt-1 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
         >
-          {languages.map((lang) => (
-            <option key={lang.code} value={lang.code}>
-              {t(`languages.${lang.code}`)}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="py-1" role="menu" aria-orientation="vertical">
+            {languages.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => {
+                  setLanguage(lang.code);
+                  setIsOpen(false);
+                }}
+                className={`${
+                  language === lang.code ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                } block w-full px-4 py-2 text-sm ${lang.code === 'ar' ? 'text-right' : 'text-right'} hover:bg-gray-50`}
+                role="menuitem"
+              >
+                {lang.nativeName}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

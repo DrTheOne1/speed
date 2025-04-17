@@ -13,5 +13,23 @@
     "locked": "Kontot är låst. Försök igen senare.",
     "success": "Inloggning lyckades",
     "register": "Skapa ett konto"
+  },
+  "send": {
+    "title": "Skicka SMS",
+    "recipient": "Mottagare",
+    "message": "Meddelande",
+    "characters": "Tecken",
+    "submit": "Skicka meddelande",
+    "loading": "Skickar...",
+    "success": "Meddelandet har skickats",
+    "error": "Det gick inte att skicka meddelandet",
+    "placeholder": {
+      "recipient": "Ange telefonnummer",
+      "message": "Skriv ditt meddelande här"
+    },
+    "validation": {
+      "recipient": "Ogiltigt telefonnummer",
+      "message": "Meddelande krävs"
+    }
   }
 }

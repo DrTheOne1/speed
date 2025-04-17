@@ -6,5 +6,75 @@
     "submit": "دخول",
     "remember": "تذكرني",
     "forgot": "نسيت كلمة المرور؟"
+  },
+  "send": {
+    "title": "إرسال رسالة",
+    "description": "إرسال رسائل نصية فردية",
+    "creditSection": {
+      "title": "الرصيد المتاح",
+      "remaining": "{{count}} رصيد"
+    },
+    "credits": {
+      "available": "الرصيد المتاح",
+      "balance": "{{count}} رصيد"
+    },
+    "form": {
+      "sender": {
+        "label": "اسم المرسل",
+        "placeholder": "اختر اسم المرسل",
+        "required": "اسم المرسل مطلوب"
+      },
+      "recipient": {
+        "label": "المستلم",
+        "placeholder": "أدخل رقم الهاتف",
+        "required": "رقم المستلم مطلوب"
+      },
+      "message": {
+        "label": "الرسالة",
+        "placeholder": "اكتب رسالتك هنا",
+        "characterCount": "{{count}}/160 حرف",
+        "required": "الرسالة مطلوبة",
+        "tooLong": "يجب أن تكون الرسالة أقل من 160 حرف"
+      },
+      "schedule": {
+        "label": "جدولة الرسالة",
+        "placeholder": "اختر التاريخ والوقت"
+      },
+      "submit": "إرسال",
+      "sending": "جاري الإرسال..."
+    },
+    "errors": {
+      "insufficientCredits": "رصيد غير كافي",
+      "purchaseMessage": "يرجى شراء المزيد من الرصيد لإرسال الرسائل"
+    },
+    "success": {
+      "sent": "تم إرسال الرسالة بنجاح!",
+      "scheduled": "تم جدولة الرسالة بنجاح!"
+    },
+    "toast": {
+      "success": "تم الإرسال بنجاح!",
+      "error": "فشل في إرسال الرسالة"
+    }
+  },
+  "sendSMS": {
+    "title": "إرسال رسالة",
+    "sender": "هوية المرسل",
+    "recipient": "المستلم",
+    "message": "الرسالة",
+    "schedule": "جدولة",
+    "submit": "إرسال",
+    "loading": "جاري الإرسال...",
+    "characters": "الأحرف:",
+    "placeholders": {
+      "recipient": "أدخل رقم الهاتف",
+      "message": "اكتب رسالتك هنا",
+      "sender": "اختر هوية المرسل"
+    },
+    "validation": {
+      "sender": "هوية المرسل مطلوبة",
+      "recipient": "المستلم مطلوب",
+      "message": "الرسالة مطلوبة",
+      "maxLength": "يجب أن تكون الرسالة أقل من 160 حرفًا"
+    }
   }
 }

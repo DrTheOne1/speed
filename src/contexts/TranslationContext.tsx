@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type Language = 'en' | 'ar';
+type Language = 'en' | 'ar' | 'sv';
 type Translations = Record<string, any>;
 
 interface TranslationContextType {
@@ -12,14 +12,27 @@ interface TranslationContextType {
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
 export const TranslationProvider = ({ children }: { children: React.ReactNode }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  // Get initial language from localStorage or default to 'en'
+  const [language, setLanguage] = useState<Language>(() => 
+    (localStorage.getItem('language') as Language) || 'en'
+  );
   const [translations, setTranslations] = useState<Translations>({});
 
+  // Update localStorage when language changes
   useEffect(() => {
+    localStorage.setItem('language', language);
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+    
     const loadTranslations = async () => {
-      const langFile = await import(`../../languages/${language}.json`);
-      setTranslations(langFile.default);
+      try {
+        const langFile = await import(`../../languages/${language}.json`);
+        setTranslations(langFile.default);
+      } catch (error) {
+        console.error('Failed to load translations:', error);
+      }
     };
+    
     loadTranslations();
   }, [language]);
 

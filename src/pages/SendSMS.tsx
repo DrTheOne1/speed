@@ -13,6 +13,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
+import { useTranslation } from '../contexts/TranslationContext';
 
 interface User {
   id: string;
@@ -28,16 +29,8 @@ interface GatewayCredits {
   currency: string;
 }
 
-const sendSMSSchema = z.object({
-  sender_id: z.string().min(1, 'Sender is required'),
-  recipient: z.string().min(1, 'Recipient is required'),
-  message: z.string().min(1, 'Message is required').max(160, 'Message must be less than 160 characters'),
-  scheduledFor: z.string().optional(),
-});
-
-type SendSMSForm = z.infer<typeof sendSMSSchema>;
-
 export default function SendSMS() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [messageLength, setMessageLength] = useState(0);
 
@@ -109,6 +102,15 @@ export default function SendSMS() {
       return data;
     },
     enabled: !!user?.gateway_id
+  });
+
+  const sendSMSSchema = z.object({
+    sender_id: z.string().min(1, t('send.form.sender.required')),
+    recipient: z.string().min(1, t('send.form.recipient.required')),
+    message: z.string()
+      .min(1, t('send.form.message.required'))
+      .max(160, t('send.form.message.tooLong')),
+    scheduledFor: z.string().optional(),
   });
 
   const form = useForm<SendSMSForm>({
@@ -332,60 +334,53 @@ export default function SendSMS() {
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex justify-between items-start">
-        <div>
-            <h1 className="text-3xl font-bold text-gray-900">Send SMS</h1>
-            <p className="mt-2 text-gray-600">Send individual SMS messages to your contacts</p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {t('send.title')}
+            </h1>
+            <p className="mt-2 text-gray-600">
+              {t('send.description')}
+            </p>
           </div>
           
-          {/* Credit Balance Card */}
           <Card className="w-[200px]">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
                 <Wallet className="h-4 w-4" />
-                Available Credits
+                {t('send.credits.available')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{user?.credits || 0}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {/* Keep credits display in English */}
+                {`${user?.credits ?? 0}`}
+              </div>
             </CardContent>
           </Card>
-      </div>
+        </div>
 
-        {/* SMS Form */}
         <Card>
-          <CardHeader>
-            <CardTitle>Message Details</CardTitle>
-            <CardDescription>Fill in the details to send your message</CardDescription>
-          </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-              name="sender_id"
-              render={({ field }) => (
+                  name="sender_id"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sender ID</FormLabel>
+                      <FormLabel>{t('send.form.sender.label')}</FormLabel>
                       <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          // Save sender ID when selected
-                          saveSenderId(value);
-                        }} 
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a sender ID" />
+                            <SelectValue placeholder={t('send.form.sender.placeholder')} />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-white border rounded-md shadow-md">
+                        <SelectContent>
                           {user?.sender_names?.map((name) => (
-                            <SelectItem 
-                              key={name} 
-                              value={name}
-                              className="hover:bg-gray-100"
-                            >
+                            <SelectItem key={name} value={name}>
                               {name}
                             </SelectItem>
                           ))}
@@ -398,16 +393,15 @@ export default function SendSMS() {
 
                 <FormField
                   control={form.control}
-            name="recipient"
-            render={({ field }) => (
+                  name="recipient"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recipient</FormLabel>
+                      <FormLabel>{t('send.form.recipient.label')}</FormLabel>
                       <FormControl>
-              <PhoneInput
-                value={field.value}
+                        <PhoneInput
+                          value={field.value}
                           onChange={(value) => {
                             field.onChange(value);
-                            // Save as user types
                             savePhoneNumber(value);
                           }}
                           error={form.formState.errors.recipient?.message}
@@ -420,15 +414,15 @@ export default function SendSMS() {
 
                 <FormField
                   control={form.control}
-            name="message"
-            render={({ field }) => (
+                  name="message"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Message</FormLabel>
+                      <FormLabel>{t('send.form.message.label')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Textarea
-                {...field}
-                            placeholder="Type your message here..."
+                            {...field}
+                            placeholder={t('send.form.message.placeholder')}
                             className="min-h-[120px]"
                             onChange={(e) => {
                               field.onChange(e);
@@ -436,7 +430,7 @@ export default function SendSMS() {
                             }}
                           />
                           <div className="absolute bottom-2 right-2 text-sm text-gray-500">
-                            {messageLength}/160
+                            {t('send.form.message.characterCount', { count: messageLength })}
                           </div>
                         </div>
                       </FormControl>
@@ -447,15 +441,15 @@ export default function SendSMS() {
 
                 <FormField
                   control={form.control}
-            name="scheduledFor"
-            render={({ field }) => (
+                  name="scheduledFor"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Schedule (Optional)</FormLabel>
+                      <FormLabel>{t('send.form.schedule.label')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
-                type="datetime-local"
-                {...field}
+                            type="datetime-local"
+                            {...field}
                             className="pl-10"
                           />
                           <Clock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -466,38 +460,38 @@ export default function SendSMS() {
                   )}
                 />
 
-                <div className="flex items-center justify-end pt-4">
-                  <Button 
-                    type="submit" 
-                    disabled={loading || !user?.credits || user.credits <= 0}
-                    className="flex items-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                        <span>Sending...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        <span>Send Message</span>
-                      </>
-                    )}
-                  </Button>
-        </div>
+                <Button 
+                  type="submit" 
+                  disabled={loading || !user?.credits || user.credits <= 0}
+                  className="flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span>{t('send.form.sending')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      <span>{t('send.form.submit')}</span>
+                    </>
+                  )}
+                </Button>
 
                 {(!user?.credits || user.credits <= 0) && (
                   <div className="mt-4 p-4 bg-yellow-50 rounded-lg flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-yellow-800">Insufficient Credits</h4>
+                      <h4 className="font-medium text-yellow-800">
+                        {t('send.errors.insufficientCredits')}
+                      </h4>
                       <p className="text-sm text-yellow-700">
-                        You need to have credits to send messages. Please purchase credits to continue.
+                        {t('send.errors.purchaseMessage')}
                       </p>
                     </div>
                   </div>
                 )}
-      </form>
+              </form>
             </Form>
           </CardContent>
         </Card>

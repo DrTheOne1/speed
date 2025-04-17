@@ -6,11 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import Sidebar from './Sidebar';
 import LanguageSelector from './LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { language } = useTranslation();
 
   const { data: isAdmin } = useQuery({
     queryKey: ['user-role'],
@@ -33,6 +35,40 @@ export default function Layout() {
     navigate('/login');
   };
 
+  const HeaderActions = () => {
+    const isArabic = language === 'ar';
+    
+    return (
+      <div className="flex items-center gap-x-4 lg:gap-x-6">
+        {isArabic ? (
+          <>
+            <button
+              type="button"
+              className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-5 w-5" />
+              Sign out
+            </button>
+            <LanguageSelector />
+          </>
+        ) : (
+          <>
+            <LanguageSelector />
+            <button
+              type="button"
+              className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-5 w-5" />
+              Sign out
+            </button>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Sidebar
@@ -48,28 +84,11 @@ export default function Layout() {
             className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
-            <span className="sr-only">Open sidebar</span>
             <Menu className="h-6 w-6" aria-hidden="true" />
           </button>
 
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex flex-1"></div>
-            <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <LanguageSelector />
-              {isAdmin && (
-                <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
-                  Admin
-                </span>
-              )}
-              <button
-                type="button"
-                className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
-                onClick={handleSignOut}
-              >
-                <LogOut className="h-5 w-5" />
-                Sign out
-              </button>
-            </div>
+          <div className="flex w-full justify-end">
+            <HeaderActions />
           </div>
         </div>
 

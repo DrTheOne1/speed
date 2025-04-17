@@ -6,5 +6,74 @@
     "submit": "Sign in",
     "remember": "Remember me",
     "forgot": "Forgot password?"
+  },
+  "send": {
+    "title": "Send SMS",
+    "description": "Send individual SMS messages",
+    "creditSection": {
+      "title": "Available Credits",
+      "remaining": "{{count}} credits"
+    },
+    "form": {
+      "sender": {
+        "label": "Sender ID",
+        "placeholder": "Select sender ID"
+      },
+      "recipient": {
+        "label": "Recipient",
+        "placeholder": "Enter phone number"
+      },
+      "message": {
+        "label": "Message",
+        "placeholder": "Type your message here",
+        "characterCount": "{{count}}/160 characters"
+      },
+      "schedule": {
+        "label": "Schedule Message",
+        "placeholder": "Select date and time"
+      },
+      "submit": "Send Message",
+      "sending": "Sending..."
+    },
+    "errors": {
+      "insufficientCredits": "Insufficient Credits",
+      "purchaseMessage": "Please purchase more credits to send messages"
+    },
+    "success": "Message sent successfully!",
+    "credits": {
+      "available": "Available Credits",
+      "balance": "{{count}} credits"
+    }
+  },
+  "sendSMS": {
+    "title": "Send SMS",
+    "description": "Send individual SMS messages to your contacts",
+    "messageDetails": "Message Details",
+    "fillDetails": "Fill in the message details below",
+    "availableCredits": "Available Credits",
+    "sender": "Sender ID",
+    "recipient": "Recipient",
+    "message": "Message",
+    "schedule": "Schedule Message",
+    "characters": "Characters:",
+    "submit": "Send Message",
+    "loading": "Sending...",
+    "insufficientCredits": "Insufficient Credits",
+    "purchaseCredits": "Please purchase more credits to send messages",
+    "placeholders": {
+      "sender": "Select sender ID",
+      "recipient": "Enter phone number",
+      "message": "Type your message here",
+      "schedule": "Select date and time"
+    },
+    "validation": {
+      "sender": "Sender ID is required",
+      "recipient": "Recipient is required",
+      "message": "Message is required",
+      "maxLength": "Message must be less than 160 characters"
+    }
+  },
+  "credits": {
+    "available": "Available Credits"
   }
 }
