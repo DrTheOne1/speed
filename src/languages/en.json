@@ -369,6 +369,7 @@
       "name": "Group Name",
       "description": "Description",
       "members": "Members",
+      "memberCount": "{{count}} members",
       "save": "Save Group",
       "cancel": "Cancel",
       "success": {

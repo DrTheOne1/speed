@@ -416,6 +416,7 @@
       "name": "Gruppnamn",
       "description": "Beskrivning",
       "members": "Medlemmar",
+      "memberCount": "{{count}} medlemmar",
       "save": "Spara grupp",
       "cancel": "Avbryt",
       "success": {

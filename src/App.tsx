@@ -17,7 +17,7 @@ import SendSMS from './pages/SendSMS';
 import BulkSend from './pages/BulkSend';
 import Contacts from './pages/Contacts';
 import Groups from './pages/Groups';
-import ImportContacts from './pages/ImportContacts';
+import ImportContactsPage from './pages/ImportContactsPage';
 import Templates from './pages/Templates';
 import Scheduled from './pages/Scheduled';
 import History from './pages/History';
@@ -80,7 +80,7 @@ function App() {
                       <Route path="/bulk-send" element={<BulkSend />} />
                       <Route path="/contacts" element={<Contacts />} />
                       <Route path="/groups" element={<Groups />} />
-                      <Route path="/import-contacts" element={<ImportContacts />} />
+                      <Route path="/import-contacts" element={<ImportContactsPage />} />
                       <Route path="/templates" element={<Templates />} />
                       <Route path="/scheduled" element={<Scheduled />} />
                       <Route path="/history" element={<History />} />

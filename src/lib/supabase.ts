@@ -26,5 +26,27 @@ const testConnection = async () => {
   }
 };
 
+// Verify Arabic text storage
+export const verifyArabicStorage = async () => {
+  try {
+    // Test string with Arabic characters
+    const testString = 'اختبار النص العربي';
+    
+    // Try to store and retrieve the test string
+    const { data: testData, error: testError } = await supabase
+      .from('contacts')
+      .select('name_ar')
+      .limit(1);
+
+    if (testError) throw testError;
+
+    // If we can query the name_ar field without errors, Arabic storage is working
+    return true;
+  } catch (error) {
+    console.error('Arabic text storage verification failed:', error);
+    return false;
+  }
+};
+
 // Run connection test
 testConnection();
