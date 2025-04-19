@@ -30,6 +30,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ActivationSuccess from './pages/auth/ActivationSuccess';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import SendGroupMessages from './pages/SendGroupMessages';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -77,6 +78,7 @@ function App() {
                     <Route element={<UserRoute />}>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/send" element={<SendSMS />} />
+                      <Route path="/send-group-messages" element={<SendGroupMessages />} />
                       <Route path="/bulk-send" element={<BulkSend />} />
                       <Route path="/contacts" element={<Contacts />} />
                       <Route path="/groups" element={<Groups />} />

@@ -32,6 +32,7 @@ export const userNavigation: NavigationItem[] = [
     icon: MessageSquare,
     children: [
       { name: 'navigation.sendSMS', href: '/send', icon: MessageSquare },
+      { name: 'navigation.sendGroupMessages', href: '/send-group-messages', icon: Users },
       { name: 'navigation.bulkSend', href: '/bulk-send', icon: Upload },
       { name: 'navigation.scheduled', href: '/scheduled', icon: Clock },
       { name: 'navigation.messages', href: '/messages', icon: MessageSquare },

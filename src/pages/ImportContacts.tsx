@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Upload, Download, CheckCircle, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -8,108 +8,33 @@ import toast from 'react-hot-toast';
 
 interface ImportedContact {
   name: string;
-  name_ar?: string;
   phone_number: string;
   user_id?: string;
 }
 
 interface Contact {
-  id: string;
   name: string;
-  name_ar?: string;
   phone_number: string;
 }
 
-const STORAGE_KEY = 'lastSelectedGroup';
-
-const normalizePhoneNumber = (phone: string): string => {
-  return phone.replace(/\D/g, '');
-};
-
-const formatPhoneNumber = (phone: string, countryCode: string): string => {
-  let digits = phone.replace(/\D/g, '');
-  
-  if (phone.startsWith('+') && phone.slice(1).startsWith(countryCode)) {
-    digits = digits.substring(countryCode.length);
-  }
-  else if (digits.startsWith('00') && digits.slice(2).startsWith(countryCode)) {
-    digits = digits.substring(countryCode.length + 2);
-  }
-  else if (digits.startsWith(countryCode)) {
-    digits = digits.substring(countryCode.length);
-  }
-  
-  if (digits.startsWith('0')) {
-    digits = digits.substring(1);
-  }
-  
-  return `+${countryCode}${digits}`;
-};
-
-const processContacts = (text: string, countryCode: string, userId: string): ImportedContact[] => {
-  // First, detect and handle BOM if present
-  const cleanText = text.replace(/^\uFEFF/, '');
-  
-  // Split by newlines, handling both \r\n and \n
-  const lines = cleanText.split(/\r?\n/);
-  
-  return lines
-    .filter(line => line.trim().length > 0)
-    .map((line, index) => {
-      // Split by comma, but handle quoted values to preserve commas within quotes
-      const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
-        .map(part => part.trim().replace(/^"(.*)"$/, '$1'));
-
-      let name = '';
-      let nameAr = '';
-      let phone = '';
-
-      if (parts.length >= 3) {
-        [name, nameAr, phone] = parts;
-      } else if (parts.length === 2) {
-        [name, phone] = parts;
-      } else {
-        phone = parts[0];
-        name = `Contact ${index + 1}`;
-      }
-
-      // Clean up any remaining quotes and trim
-      name = name.replace(/^["']|["']$/g, '').trim();
-      nameAr = nameAr.replace(/^["']|["']$/g, '').trim();
-      phone = phone.replace(/^["']|["']$/g, '').trim();
-
-      const formattedPhone = formatPhoneNumber(phone, countryCode);
-
-      return {
-        name,
-        name_ar: nameAr || undefined,
-        phone_number: formattedPhone,
-        user_id: userId
-      };
-    })
-    .filter(contact => contact.phone_number.match(/^\+\d{7,15}$/));
-};
-
 export default function ImportContacts() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState<string>('46'); // Default to Sweden
   const [phoneNumbers, setPhoneNumbers] = useState<string>('');
-  const [selectedGroup, setSelectedGroup] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEY) || '';
-  });
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', description: '' });
+  const [newGroupName, setNewGroupName] = useState<string>('');
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const groupDropdownRef = useRef<HTMLDivElement>(null);
+  const [importedContacts, setImportedContacts] = useState<ImportedContact[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 1. Get current user ID
   const [userId, setUserId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
 
   // Get current user on component mount
   useEffect(() => {
@@ -122,18 +47,36 @@ export default function ImportContacts() {
     getCurrentUser();
   }, []);
 
-  // Save selected group to localStorage
+  // Debug database connection
   useEffect(() => {
-    if (selectedGroup) {
-      localStorage.setItem(STORAGE_KEY, selectedGroup);
-    }
-  }, [selectedGroup]);
+    const debugTables = async () => {
+      console.log("Checking database tables...");
+
+      // Check groups table
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('groups')
+        .select('*')
+        .limit(1);
+
+      console.log("Groups table:", { data: groupsData, error: groupsError });
+
+      // Check contacts table
+      const { data: contactsData, error: contactsError } = await supabase
+        .from('contacts')
+        .select('*')
+        .limit(1);
+
+      console.log("Contacts table:", { data: contactsData, error: contactsError });
+    };
+
+    debugTables();
+  }, []);
 
   const { data: groups, refetch: refetchGroups } = useQuery({
     queryKey: ['groups'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('groups')
+        .from('groups') // Use consistent table name
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -141,17 +84,6 @@ export default function ImportContacts() {
       return data;
     },
   });
-
-  // Check if selected group still exists
-  useEffect(() => {
-    if (groups && selectedGroup) {
-      const groupExists = groups.some(group => group.id === selectedGroup);
-      if (!groupExists) {
-        setSelectedGroup('');
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-  }, [groups, selectedGroup]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -167,16 +99,16 @@ export default function ImportContacts() {
   const handleAddGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) {
-      toast.error(t('contacts.groups.error.auth'));
+      toast.error("You must be logged in to create groups");
       return;
     }
 
     try {
       const { error } = await supabase
-        .from('groups')
+        .from('groups') // Use consistent table name
         .insert([{
           ...newGroup,
-          user_id: userId
+          user_id: userId // Add user_id
         }]);
 
       if (error) throw error;
@@ -191,170 +123,162 @@ export default function ImportContacts() {
     }
   };
 
-  const handleFileContent = async (content: string) => {
-    try {
-      if (!selectedGroup) {
-        toast.error(t('contacts.import.error.noGroup'));
-        return;
-      }
-
-      if (!userId) {
-        toast.error("You must be logged in to import contacts");
-        return;
-      }
-
-      const contacts = processContacts(content, selectedCountry, userId);
-
-      if (contacts.length === 0) {
-        toast.error(t('contacts.import.error.noValidContacts'));
-        return;
-      }
-
-      // Log the processed contacts to verify Arabic text
-      console.log('Processed contacts:', contacts);
-
-      // Find existing contacts
-      const { data: existingContacts, error: contactsError } = await supabase
-        .from('contacts')
-        .select('id, phone_number')
-        .in('phone_number', contacts.map(c => c.phone_number));
-
-      if (contactsError) {
-        throw new Error('Failed to check existing contacts');
-      }
-
-      const existingPhoneNumbers = new Map(
-        (existingContacts || []).map(c => [c.phone_number, c.id])
-      );
-
-      // Prepare contacts for insertion and group memberships
-      const newContacts = [];
-      const groupMembers = [];
-      const existingMembers = new Set();
-
-      // Get existing group members
-      const { data: currentGroupMembers, error: groupMembersError } = await supabase
-        .from('group_members')
-        .select('contact_id')
-        .eq('group_id', selectedGroup);
-
-      if (groupMembersError) {
-        throw new Error('Failed to check existing group members');
-      }
-
-      // Create a set of existing contact IDs in the group
-      const existingGroupMembers = new Set(
-        (currentGroupMembers || []).map(member => member.contact_id)
-      );
-
-      for (const contact of contacts) {
-        const existingId = existingPhoneNumbers.get(contact.phone_number);
-        
-        if (existingId) {
-          // Only add to group if not already a member
-          if (!existingGroupMembers.has(existingId)) {
-            groupMembers.push({
-              group_id: selectedGroup,
-              contact_id: existingId
-            });
-          }
-        } else {
-          // Create new contact with proper encoding
-          const { data: insertedContact, error: insertError } = await supabase
-            .from('contacts')
-            .insert([{
-              ...contact,
-              name: contact.name,
-              name_ar: contact.name_ar || null,
-              phone_number: contact.phone_number,
-              user_id: userId
-            }])
-            .select('id')
-            .single();
-
-          if (insertError) {
-            console.error('Failed to insert contact:', insertError);
-            continue;
-          }
-
-          if (insertedContact) {
-            newContacts.push(contact);
-            groupMembers.push({
-              group_id: selectedGroup,
-              contact_id: insertedContact.id
-            });
-          }
-        }
-      }
-
-      // Add new members to the group
-      if (groupMembers.length > 0) {
-        const { error: memberError } = await supabase
-          .from('group_members')
-          .insert(groupMembers)
-          .select();
-
-        if (memberError) {
-          console.error('Failed to add contacts to group:', memberError);
-          toast.error('Failed to add some contacts to the group');
-          return;
-        }
-      }
-
-      const totalImported = groupMembers.length;
-      const newlyCreated = newContacts.length;
-      const existingAdded = totalImported - newlyCreated;
-      const skippedCount = contacts.length - totalImported;
-
-      if (skippedCount > 0) {
-        toast.success(
-          `Added ${totalImported} contacts to the group (${newlyCreated} new, ${existingAdded} existing). ${skippedCount} contacts were already in the group.`
-        );
-      } else {
-        toast.success(
-          `Successfully added ${totalImported} contacts to the group (${newlyCreated} new, ${existingAdded} existing)`
-        );
-      }
-      
-      setProgress(100);
-      queryClient.invalidateQueries({ queryKey: ['groups-with-counts'] });
-      
-      // Clear input states after successful import
-      setPhoneNumbers('');
-      setFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (error) {
-      console.error('Import error:', error);
-      toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
-    }
-  };
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (file: File) => {
     try {
       setIsLoading(true);
-      setFile(file);
+      setFile(file); // Store the file reference
+
+      if (!selectedGroup && !newGroupName) {
+        toast.error(t('contacts.import.error.noGroup'));
+        setIsLoading(false);
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = async (e) => {
-        const content = e.target?.result as string;
-        await handleFileContent(content);
+        const text = e.target?.result as string;
+        const rows = text.split('\n');
+
+        // Skip header row and filter empty rows
+        const contacts = rows.slice(1)
+          .filter(row => row.trim().length > 0)
+          .map(row => {
+            const [name, phone] = row.split(',').map(item => item?.trim() || '');
+            // Ensure phone number is properly formatted with country code
+            let formattedPhone = phone?.replace(/\s+/g, '');
+            if (formattedPhone && !formattedPhone.startsWith('+')) {
+              formattedPhone = `+${selectedCountry}${formattedPhone}`;
+            }
+            return {
+              name: name || '',
+              phone_number: formattedPhone // Important: match database column name
+            };
+          })
+          .filter(contact => contact.phone_number && contact.phone_number.length > 5);
+
+        if (contacts.length === 0) {
+          toast.error(t('contacts.import.error.noValidContacts'));
+          setIsLoading(false);
+          return;
+        }
+
+        // First create new group if needed
+        let targetGroupId = selectedGroup;
+        if (!targetGroupId && newGroupName && userId) {
+          try {
+            const { data: newGroupData, error } = await supabase
+              .from('groups') // Use consistent table name
+              .insert({
+                name: newGroupName,
+                description: '',
+                user_id: userId
+              })
+              .select('id')
+              .single();
+
+            if (error) throw error;
+
+            if (newGroupData) {
+              targetGroupId = newGroupData.id;
+              // Update selected group and refresh groups
+              setSelectedGroup(targetGroupId);
+              refetchGroups();
+            }
+          } catch (err) {
+            console.error('Error creating new group:', err);
+            toast.error(t('contacts.import.error.groupCreation'));
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        if (!targetGroupId) {
+          toast.error(t('contacts.import.error.noGroup'));
+          setIsLoading(false);
+          return;
+        }
+
+        if (!userId) {
+          toast.error("You must be logged in to import contacts");
+          setIsLoading(false);
+          return;
+        }
+
+        // Prepare contacts for database
+        const contactsToInsert = contacts.map(contact => ({
+          name: contact.name,
+          phone_number: contact.phone_number,
+          user_id: userId
+        }));
+
+        // Insert contacts into database
+        console.log('Inserting', contactsToInsert.length, 'contacts...');
+        console.log('Contacts to insert:', contactsToInsert);
+        console.log('Target group ID:', targetGroupId);
+        console.log('User ID:', userId);
+
+        // Log the first contact as a sample to check the structure
+        if (contactsToInsert.length > 0) {
+          console.log('Sample contact structure:', contactsToInsert[0]);
+        }
+
+        const { data: insertData, error: insertError } = await supabase
+          .from('contacts')
+          .insert(contactsToInsert)
+          .select();
+
+        if (insertError) {
+          console.error('Contact insertion failed:', {
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint,
+            error: insertError
+          });
+
+          // Check for specific error types
+          if (insertError.code === '23505') {
+            toast.error('Database Error: Duplicate phone numbers found. Please check for duplicates.');
+          } else if (insertError.code === '23503') {
+            toast.error('Database Error: Invalid group ID or user ID. Please try selecting a different group.');
+          } else if (insertError.code === '42501') {
+            toast.error('Database Error: Permission denied. Please check your database permissions.');
+          } else {
+            toast.error(`Database Error: ${insertError.message}. Please try again.`);
+          }
+          return;
+        }
+
+        console.log('Insert successful:', insertData);
+        toast.success(t('contacts.import.success.imported', { count: contacts.length }));
+        setImportedContacts(contacts);
+        setProgress(100);
       };
 
       reader.onerror = () => {
         toast.error(t('contacts.import.error.fileRead'));
+        setIsLoading(false);
       };
 
-      // Explicitly set UTF-8 encoding for the FileReader
-      reader.readAsText(file, 'UTF-8');
+      reader.readAsText(file);
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error('CSV upload error:', error);
       toast.error(t('contacts.import.error.general'));
     } finally {
       setIsLoading(false);
     }
   };
+
+  const [importStatus, setImportStatus] = useState<{
+    success: number;
+    errors: number;
+    errorMessages: string[];
+  }>({ success: 0, errors: 0, errorMessages: [] });
+
+  const [isImporting, setIsImporting] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState(0);
 
   const handleTextAreaImport = async () => {
     try {
@@ -363,21 +287,123 @@ export default function ImportContacts() {
         return;
       }
 
-      setIsLoading(true);
-      await handleFileContent(phoneNumbers);
+      if (!selectedGroup && !newGroupName) {
+        toast.error('Please select a group or create a new one');
+        return;
+      }
+
+      if (!userId) {
+        toast.error('You must be logged in to import contacts');
+        return;
+      }
+
+      setIsImporting(true);
+      console.log('Starting import process...');
+
+      // Process phone numbers
+      const lines = phoneNumbers.split('\n');
+      const contacts = lines
+        .filter(line => line.trim().length > 0)
+        .map((line, index) => {
+          let name = '';
+          let phone = line.trim();
+
+          if (line.includes(',')) {
+            [name, phone] = line.split(',').map(item => item?.trim() || '');
+          }
+
+          // Format phone number
+          const digits = phone.replace(/\D/g, '');
+          if (!phone.startsWith('+')) {
+            phone = `+${selectedCountry}${digits.startsWith(selectedCountry) ? digits.substring(selectedCountry.length) : digits}`;
+          }
+
+          return {
+            name: name || `Contact ${index + 1}`,
+            phone_number: phone,
+            user_id: userId
+          };
+        })
+        .filter(contact => contact.phone_number.match(/^\+\d{7,15}$/));
+
+      if (contacts.length === 0) {
+        toast.error('No valid contacts found to import');
+        return;
+      }
+
+      // First, insert contacts
+      console.log('Inserting contacts:', contacts);
+      const { data: insertedContacts, error: contactError } = await supabase
+        .from('contacts')
+        .insert(contacts)
+        .select();
+
+      if (contactError) {
+        console.error('Contact insertion failed:', contactError);
+        toast.error(`Failed to insert contacts: ${contactError.message}`);
+        return;
+      }
+
+      if (!insertedContacts || insertedContacts.length === 0) {
+        toast.error('No contacts were inserted');
+        return;
+      }
+
+      // Get or create group
+      let targetGroupId = selectedGroup;
+      if (!targetGroupId && newGroupName) {
+        const { data: newGroup, error: groupError } = await supabase
+          .from('groups')
+          .insert({
+            name: newGroupName,
+            description: '',
+            user_id: userId
+          })
+          .select('id')
+          .single();
+
+        if (groupError) {
+          console.error('Group creation failed:', groupError);
+          toast.error(`Failed to create group: ${groupError.message}`);
+          return;
+        }
+
+        targetGroupId = newGroup.id;
+      }
+
+      // Create group memberships
+      const groupMembers = insertedContacts.map(contact => ({
+        member_id: contact.id,
+        group_id: targetGroupId,
+        user_id: userId
+      }));
+
+      console.log('Creating group memberships:', groupMembers);
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert(groupMembers);
+
+      if (memberError) {
+        console.error('Group member insertion failed:', memberError);
+        toast.error(`Failed to add contacts to group: ${memberError.message}`);
+        return;
+      }
+
+      toast.success(`Successfully imported ${insertedContacts.length} contacts to the group`);
+      setPhoneNumbers('');
+      setCurrentProgress(100);
+
     } catch (error) {
-      console.error('Text area import error:', error);
-      toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
+      console.error('Import process failed:', error);
+      toast.error('An unexpected error occurred during import');
     } finally {
-      setIsLoading(false);
+      setIsImporting(false);
     }
   };
 
   const downloadTemplate = () => {
-    // Add BOM for UTF-8 encoding
-    const bom = '\uFEFF';
-    const template = `${bom}English Name,Arabic Name,Phone Number\nJohn Doe,جون دو,+1234567890\nJane Smith,جين سميث,+1234567891`;
-    const blob = new Blob([template], { type: 'text/csv;charset=utf-8' });
+    const template = 'Name,Phone Number\nJohn Doe,+1234567890';
+    const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -386,34 +412,95 @@ export default function ImportContacts() {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleDeleteSelectedContacts = async () => {
-    if (!selectedGroup || selectedContacts.length === 0) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Handle form submission based on import method
+    if (file) {
+      await handleFileUpload(file);
+    } else {
+      await handleTextAreaImport();
+    }
+  };
 
+  const handleClear = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setImportedContacts([]);
+    setProgress(0);
+    setImportStatus({ success: 0, errors: 0, errorMessages: [] });
+  };
+
+  // Add this function to check table structure
+  const checkContactsTable = async () => {
     try {
-      // Only delete the group membership association, not the contact itself
-      const { error } = await supabase
-        .from('group_members')
-        .delete()
-        .eq('group_id', selectedGroup)
-        .in('contact_id', selectedContacts);
-
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .limit(1);
+      
       if (error) {
-        console.error('Error deleting contacts from group:', error);
-        toast.error(t('contacts.groups.error.deleteContacts'));
+        console.error('Error checking contacts table:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        console.log('Contacts table structure:', Object.keys(data[0]));
+      }
+    } catch (error) {
+      console.error('Error checking contacts table:', error);
+    }
+  };
+
+  // Add this useEffect to check table structure on component mount
+  useEffect(() => {
+    checkContactsTable();
+  }, []);
+
+  // Add this function to inspect database schema
+  const inspectDatabaseSchema = async () => {
+    try {
+      console.log('Inspecting database schema...');
+
+      // Get all tables
+      const { data: tables, error: tablesError } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public');
+
+      if (tablesError) {
+        console.error('Error fetching tables:', tablesError);
         return;
       }
 
-      // Update local state to remove the contacts from the current group view
-      setContacts(prevContacts => 
-        prevContacts.filter(contact => !selectedContacts.includes(contact.id))
-      );
-      setSelectedContacts([]);
-      toast.success(t('contacts.groups.success.deletedContacts'));
+      console.log('Tables in database:', tables);
+
+      // Get columns for each table
+      for (const table of tables || []) {
+        const { data: columns, error: columnsError } = await supabase
+          .from('information_schema.columns')
+          .select('column_name, data_type, is_nullable')
+          .eq('table_schema', 'public')
+          .eq('table_name', table.table_name);
+
+        if (columnsError) {
+          console.error(`Error fetching columns for ${table.table_name}:`, columnsError);
+          continue;
+        }
+
+        console.log(`Columns in ${table.table_name}:`, columns);
+      }
     } catch (error) {
-      console.error('Error deleting contacts from group:', error);
-      toast.error(t('contacts.groups.error.deleteContacts'));
+      console.error('Error inspecting schema:', error);
     }
   };
+
+  // Call it in useEffect
+  useEffect(() => {
+    inspectDatabaseSchema();
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -428,7 +515,6 @@ export default function ImportContacts() {
             </h3>
             <div className="mt-2 max-w-xl text-sm text-gray-500">
               <p>{t('contacts.import.manual.description')}</p>
-              <p className="mt-2">{t('contacts.import.format.description')}</p>
             </div>
             <div className="mt-4 space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -453,10 +539,20 @@ export default function ImportContacts() {
                     ))}
                   </select>
                 </div>
-                <div className="relative" ref={groupDropdownRef}>
-                  <label htmlFor="group" className="block text-sm font-medium text-gray-700">
-                    {t('contacts.import.manual.group')}
-                  </label>
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="group" className="block text-sm font-medium text-gray-700">
+                      {t('contacts.import.manual.group')}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingGroup(true)}
+                      className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-500"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      {t('contacts.groups.add')}
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
@@ -553,7 +649,7 @@ export default function ImportContacts() {
                   rows={10}
                   value={phoneNumbers}
                   onChange={(e) => setPhoneNumbers(e.target.value)}
-                  placeholder="John Doe,جون دو,+1234567890"
+                  placeholder={t('contacts.import.manual.placeholder')}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono whitespace-pre overflow-x-auto"
                   style={{
                     minHeight: '200px',
@@ -561,7 +657,6 @@ export default function ImportContacts() {
                     padding: '8px 12px',
                     margin: '2px'
                   }}
-                  dir="auto"
                 />
                 <p className="mt-1 text-sm text-gray-500">
                   {t('contacts.import.manual.format')}
@@ -574,10 +669,10 @@ export default function ImportContacts() {
                 <button
                   type="button"
                   onClick={handleTextAreaImport}
-                  disabled={isLoading || !phoneNumbers.trim()}
+                  disabled={isImporting || !phoneNumbers.trim()}
                   className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
                 >
-                  {isLoading ? t('contacts.import.upload.importing') : t('contacts.import.upload.import')}
+                  {isImporting ? t('contacts.import.upload.importing') : t('contacts.import.upload.import')}
                 </button>
               </div>
             </div>
@@ -589,7 +684,7 @@ export default function ImportContacts() {
               {t('contacts.import.template.title')}
             </h3>
             <div className="mt-2 max-w-xl text-sm text-gray-500">
-              <p>{t('contacts.import.template.format')}</p>
+              <p>{t('contacts.import.template.description')}</p>
             </div>
             <div className="mt-3">
               <button
@@ -621,16 +716,16 @@ export default function ImportContacts() {
                     <p className="text-xs text-gray-500">{t('contacts.import.upload.fileType')}</p>
                   </div>
                   <input
+                    ref={fileInputRef}
                     type="file"
-                    className="hidden"
-                    accept=".csv,.txt"
+                    accept=".csv"
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleFileUpload(file);
+                      const selectedFile = e.target.files?.[0];
+                      if (selectedFile) {
+                        handleFileUpload(selectedFile);
                       }
                     }}
-                    ref={fileInputRef}
+                    className="hidden"
                   />
                 </label>
               </div>
@@ -656,6 +751,15 @@ export default function ImportContacts() {
                     </p>
                   </div>
                 )}
+
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  disabled={isLoading}
+                  className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+                >
+                  {t('contacts.import.clear')}
+                </button>
               </div>
             )}
           </div>

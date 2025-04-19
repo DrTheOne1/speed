@@ -279,7 +279,7 @@ export default function UserManagement() {
                             />
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={() => removeSenderName(index)}
                             >
                               <X className="h-4 w-4" />

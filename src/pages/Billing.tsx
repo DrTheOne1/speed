@@ -19,6 +19,26 @@ const formatCurrency = (amount: number, language: string) => {
   }).format(amount);
 };
 
+// Make sure this function handles translation correctly
+const translateDynamicContent = (content, translations) => {
+  // Add debugging
+  console.log('Translating content:', { content, translations, currentLanguage: language });
+  
+  // Handle null/undefined content
+  if (!content) return '';
+  
+  // If it's a simple string with no translations
+  if (!translations) return content;
+  
+  // If translations exist in the expected format
+  if (translations[language]) {
+    return translations[language];
+  }
+  
+  // Fallback to English or original content
+  return translations.en || content;
+};
+
 // Add translation helper function
 const getTranslatedContent = (content: any, field: string, language: string) => {
   if (!content?.translations?.[field]) {
@@ -108,29 +128,63 @@ const Billing = () => {
           .order('price', { ascending: true });
 
         if (error) throw error;
+        
+        // Log raw data for debugging
+        console.log('Raw plans structure:', data);
 
-        // Translate the plans content
-        const translatedPlans = data.map(plan => ({
-          ...plan,
-          name: translateDynamicContent(plan.name, plan.translations),
-          description: translateDynamicContent(plan.description, plan.translations),
-          features: plan.features.map(feature => ({
-            ...feature,
-            text: translateDynamicContent(feature.text, feature.translations)
-          }))
-        }));
+        const translatedPlans = data.map(plan => {
+          // Debug each plan structure
+          console.log(`Processing plan: ${plan.id}`, plan);
+          
+          // Check features structure
+          console.log('Features structure:', plan.features);
+          
+          return {
+            ...plan,
+            name: plan.name || 'Plan',
+            description: plan.description || '',
+            features: Array.isArray(plan.features) 
+              ? plan.features.map((feature, index) => {
+                  // Feature could be a string or an object
+                  if (typeof feature === 'string') {
+                    return { text: feature };
+                  }
+                  
+                  // Handle feature object with translations
+                  if (typeof feature === 'object') {
+                    // Check if feature.translations exists
+                    if (feature.translations) {
+                      // Try to get translated version based on current language
+                      const translatedText = feature.translations[language] || 
+                                            feature.translations.en || 
+                                            feature.text || 
+                                            `Feature ${index+1}`;
+                      return { ...feature, text: translatedText };
+                    }
+                    
+                    // If no translations, use text or default
+                    return { ...feature, text: feature.text || `Feature ${index+1}` };
+                  }
+                  
+                  // Fallback for any other format
+                  return { text: `Feature ${index+1}` };
+                })
+              : []
+          };
+        });
 
+        console.log('Translated plans:', translatedPlans);
         setPlans(translatedPlans);
       } catch (err) {
-        setError(t('billing.error.loading'));
         console.error('Error loading plans:', err);
+        setError(t('billing.error.loading'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchPlans();
-  }, [language, t, translateDynamicContent]);
+  }, [language, t]);
 
   // Billing cycle translations
   const getBillingCycle = (cycle: string, lang: string) => {
@@ -190,48 +244,82 @@ const Billing = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`border rounded-lg p-6 ${
-                selectedPlan?.id === plan.id ? 'border-blue-500 bg-blue-50' : ''
+              className={`bg-white border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full ${
+                selectedPlan?.id === plan.id 
+                  ? 'border-blue-500 ring-2 ring-blue-500 ring-opacity-50' 
+                  : 'border-gray-200'
               }`}
             >
-              <h2 className="text-xl font-bold mb-2">{plan.name}</h2>
-              <p className="text-gray-600 mb-4">{plan.description}</p>
+              {/* Plan header */}
               <div className="mb-4">
-                <span className="text-3xl font-bold">
-                  {formatCurrency(plan.price, language)}
-                </span>
-                <span className="text-gray-600">/{getBillingCycle(plan.billing_cycle, language)}</span>
+                {selectedPlan?.id === plan.id && (
+                  <span className="inline-block px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full mb-2">
+                    {t('billing.selected')}
+                  </span>
+                )}
+                <h2 className="text-xl font-bold mb-2">{plan.name || 'Plan'}</h2>
+                <p className="text-gray-600 text-sm min-h-[40px]">{plan.description || 'No description available'}</p>
               </div>
-              <ul className="mb-6">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-center mb-2">
-                    <svg
-                      className="w-5 h-5 text-green-500 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    {feature.text}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handleSubscribe(plan)}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
-              >
-                {t('billing.subscribe')}
-              </button>
+              
+              {/* Plan pricing */}
+              <div className="mb-4 pb-2 border-b">
+                <span className="text-3xl font-bold">
+                  {formatCurrency(plan.price || 0, language)}
+                </span>
+                <span className="text-gray-600">/{getBillingCycle(plan.billing_cycle || 'monthly', language)}</span>
+              </div>
+              
+              {/* Plan features */}
+              <div className="flex-grow">
+                <ul className="mb-6">
+                  {Array.isArray(plan.features) && plan.features.length > 0 ? (
+                    plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-start mb-2">
+                        <svg
+                          className={`w-5 h-5 mr-2 flex-shrink-0 mt-0.5 ${
+                            selectedPlan?.id === plan.id ? 'text-blue-500' : 'text-green-500'
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <span className="text-sm">
+                          {/* More robust display of feature text */}
+                          {typeof feature === 'string' ? feature : 
+                           feature?.text || `Feature ${index+1}`}
+                        </span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-sm text-gray-500">No features available</li>
+                  )}
+                </ul>
+              </div>
+              
+              {/* Button - always at the bottom */}
+              <div className="mt-auto pt-2">
+                <button
+                  onClick={() => handleSubscribe(plan)}
+                  className={`w-full py-2 px-4 rounded transition-colors ${
+                    selectedPlan?.id === plan.id
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {selectedPlan?.id === plan.id ? t('billing.current') : t('billing.subscribe')}
+                </button>
+              </div>
             </div>
           ))}
         </div>

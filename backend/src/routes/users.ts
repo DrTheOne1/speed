@@ -50,6 +50,11 @@ router.put('/:id', async (req, res) => {
     if (gateway_id !== undefined) {
       updateData.gateway_id = gateway_id;
     }
+    
+    // Also update sender_names in the users table
+    if (sender_names !== undefined) {
+      updateData.sender_names = sender_names;
+    }
 
     const { data, error } = await supabase
       .from('users')

@@ -20,8 +20,8 @@
     "recipientLabel": "المستلم",
     "recipientPlaceholder": "أدخل رقم الهاتف",
     "messageLabel": "الرسالة",
-    "messagePlaceholder": "اكتب رسالتك هنا",
-    "charactersRemaining": "باقي {{count}} حرف (68 حرف في الصفحة للرسائل متعددة الأجزاء)",
+    "messagePlaceholder": "أدخل رسالتك",
+    "charactersRemaining": "{{count}} حرف متبقي",
     "messageWillBeSplit": "سيتم تقسيم الرسالة إلى {{count}} أجزاء",
     "messagePoints": "{{points}} نقطة",
     "sendButton": "إرسال الرسالة",
@@ -30,8 +30,8 @@
     "scheduleSend": "جدولة الإرسال",
     "templatesTitle": "قوالب الرسائل",
     "scheduleNow": "إرسال الآن",
-    "scheduleLater": "جدولة لوقت لاحق",
-    "scheduledFor": "مجدول لـ",
+    "scheduleLater": "جدولة لاحقاً",
+    "scheduledFor": "مجدول في",
     "templates": "القوالب",
     "useTemplate": "استخدم قالب",
     "success": "تم إرسال الرسالة بنجاح",
@@ -44,7 +44,7 @@
     },
     "confirmation": {
       "title": "تأكيد الإرسال",
-      "message": "إرسال رسالة قصيرة إلى {{recipient}}؟",
+      "message": "هل أنت متأكد من إرسال هذه الرسالة؟",
       "cost": "سيستخدم هذا {{count}} رصيد",
       "confirm": "إرسال",
       "cancel": "إلغاء"
@@ -154,7 +154,7 @@
     "logout": "تسجيل الخروج",
     "messaging": "الرسائل",
     "bulkSend": "إرسال جماعي",
-    "scheduled": "مجدولة",
+    "scheduled": "الرسائل المجدولة",
     "messages": "الرسائل",
     "allContacts": "جميع جهات الاتصال",
     "groups": "المجموعات",
@@ -168,7 +168,8 @@
     "gatewayLogs": "سجلات البوابة",
     "testSMS": "اختبار الرسائل",
     "paymentMethods": "طرق الدفع",
-    "subscriptionPlans": "خطط الاشتراك"
+    "subscriptionPlans": "خطط الاشتراك",
+    "sendGroupMessages": "إرسال رسائل للمجموعات"
   },
   "bulkSend": {
     "title": "إرسال رسائل جماعي",
@@ -554,5 +555,35 @@
         "phoneInvalid": "رقم الهاتف غير صالح"
       }
     }
+  },
+  "sendGroupMessages": {
+    "title": "إرسال رسائل جماعية",
+    "groupLabel": "اختر مجموعة",
+    "selectGroup": "اختر مجموعة",
+    "messageLabel": "الرسالة",
+    "messagePlaceholder": "اكتب رسالتك هنا...",
+    "charactersRemaining": "{{count}} حرف متبقي",
+    "messageWillBeSplit": "سيتم تقسيم الرسالة إلى {{count}} أجزاء",
+    "messagePoints": "{{points}} نقطة",
+    "scheduleNow": "إرسال الآن",
+    "scheduleLater": "جدولة لاحقاً",
+    "scheduledFor": "مجدول لـ",
+    "sendButton": "إرسال الرسالة",
+    "success": "تم إرسال الرسائل بنجاح",
+    "error": "فشل في إرسال الرسائل",
+    "error.noGroup": "الرجاء اختيار مجموعة",
+    "error.noMessage": "الرجاء إدخال رسالة",
+    "error.noScheduleTime": "الرجاء اختيار وقت الجدولة",
+    "confirmTitle": "تأكيد الإرسال",
+    "confirmMessage": "هل أنت متأكد أنك تريد إرسال هذه الرسالة إلى {{group}} ({{count}} مستلم)؟",
+    "cancelButton": "إلغاء",
+    "confirmButton": "تأكيد",
+    "groupInfo": "معلومات المجموعة",
+    "groupName": "اسم المجموعة",
+    "groupDescription": "الوصف",
+    "memberCount": "عدد الأعضاء",
+    "recipients": "المستلمون",
+    "members": "أعضاء",
+    "selectGroupPrompt": "اختر مجموعة لعرض التفاصيل"
   }
 }
