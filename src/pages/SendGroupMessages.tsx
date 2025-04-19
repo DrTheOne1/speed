@@ -47,6 +47,24 @@ export default function SendGroupMessages() {
   const groupDropdownRef = useRef<HTMLDivElement>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isScheduleDropdownOpen, setIsScheduleDropdownOpen] = useState(false);
+  const [availableSenders, setAvailableSenders] = useState<string[]>([]);
+  const [selectedSender, setSelectedSender] = useState<string>(() => {
+    // Try to get previously selected sender from localStorage
+    return localStorage.getItem('lastSelectedSender') || '';
+  });
+
+  // Add these functions to save selections to localStorage
+  const saveSelectedSender = (senderId: string) => {
+    setSelectedSender(senderId);
+    localStorage.setItem('lastSelectedSender', senderId);
+  };
+
+  const saveSelectedGroup = (group: Group) => {
+    setSelectedGroup(group);
+    localStorage.setItem('lastSelectedGroupId', group.id);
+    // Store the group name too for display purposes if needed
+    localStorage.setItem('lastSelectedGroupName', group.name);
+  };
 
   // Get current user on component mount
   useEffect(() => {
@@ -58,6 +76,28 @@ export default function SendGroupMessages() {
     };
     getCurrentUser();
   }, []);
+
+  // Fetch available sender IDs
+  useEffect(() => {
+    const fetchSenderIds = async () => {
+      if (!userId) return;
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('sender_names')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data && Array.isArray(data.sender_names)) {
+        setAvailableSenders(data.sender_names);
+        if (data.sender_names.length > 0) {
+          setSelectedSender(data.sender_names[0]);
+        }
+      }
+    };
+
+    fetchSenderIds();
+  }, [userId]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -102,6 +142,20 @@ export default function SendGroupMessages() {
       return groupsWithCounts;
     },
   });
+
+  // Add this useEffect after the groups query is defined
+  useEffect(() => {
+    // Try to restore the last selected group when groups are loaded
+    if (groups?.length && !selectedGroup) {
+      const lastGroupId = localStorage.getItem('lastSelectedGroupId');
+      if (lastGroupId) {
+        const savedGroup = groups.find(g => g.id === lastGroupId);
+        if (savedGroup) {
+          setSelectedGroup(savedGroup);
+        }
+      }
+    }
+  }, [groups, selectedGroup]);
 
   // Fetch contacts when a group is selected
   useEffect(() => {
@@ -206,49 +260,55 @@ export default function SendGroupMessages() {
           throw new Error(`Insufficient credits. Required: ${requiredCredits}, Available: ${userData.credits}`);
         }
 
-        // Insert messages into the database
-        const { error: insertError } = await supabase
+        // Insert messages into the database and get their IDs
+        const { data: messagesData, error: insertError } = await supabase
           .from('messages')
           .insert(
             groupContacts.map(contact => ({
               user_id: session.user.id,
               gateway_id: userData.gateway_id,
+              sender_id: selectedSender,
               recipient: contact.phone_number,
-              content: data.message,
+              message: data.message,
               scheduled_for: data.scheduled ? data.scheduleTime : null,
-              status: data.scheduled ? 'scheduled' : 'pending',
-              group_id: selectedGroup.id
+              status: data.scheduled ? 'scheduled' : 'pending'
             }))
-          );
+          )
+          .select('id, recipient');
         
         if (insertError) {
-          console.error('Error sending messages:', insertError);
+          console.error('Error inserting messages:', insertError);
           throw new Error(insertError.message || 'Failed to send messages');
         }
 
         // If not scheduled, send messages immediately
         if (!data.scheduled) {
-          const endpoint = 'send-twilio-sms';
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                gateway_id: userData.gateway_id,
-                recipients: groupContacts.map(contact => contact.phone_number),
-                message: data.message,
-                group_id: selectedGroup.id
-              }),
-            }
-          );
+          const endpoint = 'send-sms'; // Make sure this matches your single message endpoint
+          
+          for (const messageData of messagesData) {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  gateway_id: userData.gateway_id,
+                  sender_id: selectedSender,
+                  recipient: messageData.recipient, // Single recipient, not an array
+                  message: data.message,
+                  message_id: messageData.id // Important: include message_id
+                }),
+              }
+            );
 
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to send messages');
+            if (!response.ok) {
+              const error = await response.json();
+              console.error(`Failed to send message to ${messageData.recipient}:`, error);
+              // Continue with other messages instead of throwing
+            }
           }
         }
         
@@ -275,6 +335,12 @@ export default function SendGroupMessages() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Add validation for sender_id
+    if (!selectedSender) {
+      toast.error(t('sendGroupMessages.error.noSenderId'));
+      return;
+    }
     
     // Validate form data before showing confirmation
     if (!selectedGroup) {
@@ -380,7 +446,7 @@ export default function SendGroupMessages() {
                         key={group.id}
                         className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"
                         onClick={() => {
-                          setSelectedGroup(group);
+                          saveSelectedGroup(group);
                           setIsGroupDropdownOpen(false);
                         }}
                       >
@@ -452,6 +518,36 @@ export default function SendGroupMessages() {
                 </form>
               </div>
             )}
+
+            {/* Sender Selection */}
+            <div>
+              <label htmlFor="sender_id" className="block text-sm font-medium text-gray-700">
+                {t('sendGroupMessages.senderLabel')}
+              </label>
+              <select
+                id="sender_id"
+                name="sender_id"
+                value={selectedSender}
+                onChange={(e) => saveSelectedSender(e.target.value)}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                required
+              >
+                {availableSenders.length === 0 ? (
+                  <option value="">{t('sendGroupMessages.noSendersAvailable')}</option>
+                ) : (
+                  availableSenders.map((sender) => (
+                    <option key={sender} value={sender}>
+                      {sender}
+                    </option>
+                  ))
+                )}
+              </select>
+              {availableSenders.length === 0 && (
+                <p className="mt-2 text-sm text-red-600">
+                  {t('sendGroupMessages.configureSenderIdsFirst')}
+                </p>
+              )}
+            </div>
 
             {/* Message */}
             <div>
@@ -641,4 +737,4 @@ export default function SendGroupMessages() {
       )}
     </div>
   );
-} 
+}

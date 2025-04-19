@@ -24,7 +24,11 @@ export default function ImportContacts() {
   const [progress, setProgress] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState<string>('46'); // Default to Sweden
   const [phoneNumbers, setPhoneNumbers] = useState<string>('');
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
+  const [selectedGroup, setSelectedGroup] = useState<string>(() => {
+    // Try to get previously selected group from localStorage
+    const savedGroup = localStorage.getItem('lastSelectedGroup');
+    return savedGroup || '';
+  });
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', description: '' });
   const [newGroupName, setNewGroupName] = useState<string>('');
@@ -104,14 +108,21 @@ export default function ImportContacts() {
     }
 
     try {
-      const { error } = await supabase
-        .from('groups') // Use consistent table name
+      const { data, error } = await supabase
+        .from('groups')
         .insert([{
           ...newGroup,
-          user_id: userId // Add user_id
-        }]);
+          user_id: userId
+        }])
+        .select('id') // Get the ID of the newly created group
+        .single();
 
       if (error) throw error;
+
+      // Select the newly created group
+      if (data?.id) {
+        selectGroup(data.id); // Use our new function
+      }
 
       setNewGroup({ name: '', description: '' });
       setIsAddingGroup(false);
@@ -298,11 +309,12 @@ export default function ImportContacts() {
       }
 
       setIsImporting(true);
+      setImportStatus({ success: 0, errors: 0, errorMessages: [] });
       console.log('Starting import process...');
 
-      // Process phone numbers
+      // Process phone numbers from input - this part is fine
       const lines = phoneNumbers.split('\n');
-      const contacts = lines
+      const contactsToProcess = lines
         .filter(line => line.trim().length > 0)
         .map((line, index) => {
           let name = '';
@@ -323,31 +335,23 @@ export default function ImportContacts() {
             phone_number: phone,
             user_id: userId
           };
-        })
-        .filter(contact => contact.phone_number.match(/^\+\d{7,15}$/));
+        });
 
-      if (contacts.length === 0) {
-        toast.error('No valid contacts found to import');
-        return;
-      }
+      // Add type definitions for these arrays
 
-      // First, insert contacts
-      console.log('Inserting contacts:', contacts);
-      const { data: insertedContacts, error: contactError } = await supabase
-        .from('contacts')
-        .insert(contacts)
-        .select();
+      // Remove duplicates from input
+      const uniquePhoneNumbers = new Set<string>();
+      const uniqueContacts: ImportedContact[] = [];
+      const duplicatesInInput: ImportedContact[] = [];
 
-      if (contactError) {
-        console.error('Contact insertion failed:', contactError);
-        toast.error(`Failed to insert contacts: ${contactError.message}`);
-        return;
-      }
-
-      if (!insertedContacts || insertedContacts.length === 0) {
-        toast.error('No contacts were inserted');
-        return;
-      }
+      contactsToProcess.forEach(contact => {
+        if (uniquePhoneNumbers.has(contact.phone_number)) {
+          duplicatesInInput.push(contact);
+        } else {
+          uniquePhoneNumbers.add(contact.phone_number);
+          uniqueContacts.push(contact);
+        }
+      });
 
       // Get or create group
       let targetGroupId = selectedGroup;
@@ -363,33 +367,130 @@ export default function ImportContacts() {
           .single();
 
         if (groupError) {
-          console.error('Group creation failed:', groupError);
-          toast.error(`Failed to create group: ${groupError.message}`);
+          console.error('Error creating group:', groupError);
+          toast.error('Failed to create new group');
+          setIsImporting(false);
           return;
         }
-
+        
         targetGroupId = newGroup.id;
       }
 
-      // Create group memberships
-      const groupMembers = insertedContacts.map(contact => ({
-        member_id: contact.id,
-        group_id: targetGroupId,
-        user_id: userId
-      }));
+      // FIX 1: Use two-step process to handle contacts properly
+      const addedContacts = [];
+      const failedContacts = [];
 
-      console.log('Creating group memberships:', groupMembers);
-      const { error: memberError } = await supabase
-        .from('group_members')
-        .insert(groupMembers);
+      // Step 1: First try to insert ALL contacts - some will fail with constraint error
+      console.log(`Attempting to insert ${uniqueContacts.length} contacts`);
+      for (const contact of uniqueContacts) {
+        try {
+          const { data, error } = await supabase
+            .from('contacts')
+            .insert(contact)
+            .select('id, phone_number')
+            .single();
 
-      if (memberError) {
-        console.error('Group member insertion failed:', memberError);
-        toast.error(`Failed to add contacts to group: ${memberError.message}`);
-        return;
+          if (error) {
+            if (error.code === '23505') { // Unique constraint error
+              console.log(`Contact with phone ${contact.phone_number} already exists - will find ID later`);
+              failedContacts.push(contact);
+            } else {
+              console.error(`Error inserting contact ${contact.phone_number}:`, error);
+              failedContacts.push(contact);
+            }
+          } else if (data) {
+            console.log(`Successfully inserted new contact with ID ${data.id}`);
+            addedContacts.push({
+              id: data.id,
+              phone_number: data.phone_number
+            });
+          }
+        } catch (err) {
+          console.error(`Error processing contact ${contact.phone_number}:`, err);
+          failedContacts.push(contact);
+        }
       }
 
-      toast.success(`Successfully imported ${insertedContacts.length} contacts to the group`);
+      // Step 2: For failed contacts, look up their IDs in the database
+      if (failedContacts.length > 0) {
+        console.log(`Looking up IDs for ${failedContacts.length} existing contacts`);
+        const phoneNumbers = failedContacts.map(c => c.phone_number);
+        
+        const { data: existingContacts, error: lookupError } = await supabase
+          .from('contacts')
+          .select('id, phone_number')
+          .in('phone_number', phoneNumbers);
+          
+        if (lookupError) {
+          console.error('Error looking up existing contacts:', lookupError);
+        } else if (existingContacts && existingContacts.length > 0) {
+          console.log(`Found ${existingContacts.length} existing contacts`);
+          
+          // Add these to our list of contacts to add to the group
+          addedContacts.push(...existingContacts);
+        }
+      }
+
+      // Step 3: Check which contacts are already in this group
+      console.log(`Checking which contacts are already in group ${targetGroupId}`);
+      const contactIds = addedContacts.map(c => c.id);
+      
+      const { data: existingMembers, error: memberCheckError } = await supabase
+        .from('group_members')
+        .select('contact_id')
+        .eq('group_id', targetGroupId)
+        .in('contact_id', contactIds);
+        
+      if (memberCheckError) {
+        console.error('Error checking existing group members:', memberCheckError);
+      }
+      
+      // Create set of IDs already in group
+      const existingMemberIds = new Set((existingMembers || []).map(m => m.contact_id));
+      
+      // Filter out contacts already in group
+      const contactsToAddToGroup = addedContacts.filter(c => !existingMemberIds.has(c.id));
+      const alreadyInGroup = addedContacts.filter(c => existingMemberIds.has(c.id));
+      
+      console.log(`${contactsToAddToGroup.length} contacts to add to group, ${alreadyInGroup.length} already in group`);
+
+      // Step 4: Add contacts to group
+      let addedToGroup = 0;
+      if (contactsToAddToGroup.length > 0) {
+        const groupMembers = contactsToAddToGroup.map(contact => ({
+          contact_id: contact.id,
+          group_id: targetGroupId
+        }));
+        
+        const { data: addedMembers, error: addError } = await supabase
+          .from('group_members')
+          .insert(groupMembers)
+          .select();
+          
+        if (addError) {
+          console.error('Error adding contacts to group:', addError);
+        } else {
+          addedToGroup = addedMembers?.length || 0;
+          console.log(`Successfully added ${addedToGroup} contacts to group`);
+        }
+      }
+
+      // Final status update
+      const totalSuccess = addedToGroup;
+      const totalDuplicates = duplicatesInInput.length + alreadyInGroup.length;
+      
+      toast.success(`Import complete: ${totalSuccess} contacts added${totalDuplicates > 0 ? `, ${totalDuplicates} duplicates filtered` : ''}`);
+      
+      setImportStatus({
+        success: totalSuccess,
+        errors: totalDuplicates,
+        errorMessages: [
+          ...duplicatesInInput.map(c => `${c.phone_number} - Duplicate in input`),
+          ...alreadyInGroup.map(c => `${c.phone_number} - Already in this group`)
+        ]
+      });
+
+      // Reset form
       setPhoneNumbers('');
       setCurrentProgress(100);
 
@@ -502,6 +603,12 @@ export default function ImportContacts() {
     inspectDatabaseSchema();
   }, []);
 
+  const selectGroup = (groupId: string) => {
+    setSelectedGroup(groupId);
+    localStorage.setItem('lastSelectedGroup', groupId);
+    setIsGroupDropdownOpen(false);
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">{t('contacts.import.title')}</h1>
@@ -568,6 +675,7 @@ export default function ImportContacts() {
                             type="button"
                             onClick={() => {
                               setSelectedGroup('');
+                              localStorage.removeItem('lastSelectedGroup'); // Clear saved group
                               setIsGroupDropdownOpen(false);
                             }}
                             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50"
@@ -579,10 +687,7 @@ export default function ImportContacts() {
                           <li key={group.id}>
                             <button
                               type="button"
-                              onClick={() => {
-                                setSelectedGroup(group.id);
-                                setIsGroupDropdownOpen(false);
-                              }}
+                              onClick={() => selectGroup(group.id)}
                               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50"
                             >
                               {group.name}
