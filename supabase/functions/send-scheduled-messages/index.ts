@@ -30,6 +30,15 @@ serve(async (req) => {
     const results = []
     for (const message of messagesToSend || []) {
       try {
+        // Get the user's auth data
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', message.user_id)
+          .single()
+        
+        if (userError) throw new Error(`Failed to get user data: ${userError.message}`)
+        
         // Send the message using the send-sms endpoint
         const response = await fetch(
           `${SUPABASE_URL}/functions/v1/send-sms`,
@@ -38,6 +47,7 @@ serve(async (req) => {
             headers: {
               'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
               'Content-Type': 'application/json',
+              'X-User-Id': message.user_id, // Pass the user ID for authentication
             },
             body: JSON.stringify({
               gateway_id: message.gateway_id,
@@ -49,25 +59,49 @@ serve(async (req) => {
           }
         )
         
+        let responseData
+        try {
+          responseData = await response.json()
+        } catch (e) {
+          responseData = { error: 'Failed to parse response' }
+        }
+        
         // Update message status
         const status = response.ok ? 'sent' : 'failed'
+        const errorMessage = !response.ok ? (responseData?.error || 'Unknown error') : null
+        
         await supabase
           .from('messages')
           .update({ 
             status,
-            sent_at: response.ok ? now.toISOString() : null
+            sent_at: response.ok ? now.toISOString() : null,
+            error_message: errorMessage
           })
           .eq('id', message.id)
           
-        results.push({ id: message.id, status, success: response.ok })
+        results.push({ 
+          id: message.id, 
+          status, 
+          success: response.ok,
+          error: errorMessage
+        })
       } catch (err) {
         // Handle errors
+        const errorMessage = err.message || 'Unknown error occurred'
         await supabase
           .from('messages')
-          .update({ status: 'failed', error_message: err.message })
+          .update({ 
+            status: 'failed', 
+            error_message: errorMessage,
+            sent_at: null
+          })
           .eq('id', message.id)
           
-        results.push({ id: message.id, status: 'failed', error: err.message })
+        results.push({ 
+          id: message.id, 
+          status: 'failed', 
+          error: errorMessage 
+        })
       }
     }
     

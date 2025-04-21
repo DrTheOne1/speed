@@ -586,5 +586,42 @@
         "phoneInvalid": "Ogiltigt telefonnummer"
       }
     }
+  },
+  "sendGroupMessages": {
+    "senderLabel": "Välj avsändar-ID",
+    "title": "Skicka gruppmeddelanden",
+    "groupLabel": "Välj grupp",
+    "messageLabel": "Meddelande",
+    "messagePlaceholder": "Skriv ditt meddelande här...",
+    "charactersRemaining": "{{count}} tecken återstår",
+    "messageWillBeSplit": "Meddelandet delas upp i {{count}} delar",
+    "messagePoints": "{{points}} krediter",
+    "scheduleNow": "Skicka nu",
+    "scheduleLater": "Schemalägga för senare",
+    "scheduledFor": "Schemalagd för",
+    "sendButton": "Skicka meddelande",
+    "noSendersAvailable": "Inga avsändar-ID tillgängliga",
+    "configureSenderIdsFirst": "Konfigurera avsändar-ID i dina kontoinställningar först",
+    "members": "kontakter",
+    "selectGroup": "Välj en grupp",
+    "groupInfo": "Gruppinformation",
+    "groupName": "Gruppnamn",
+    "groupDescription": "Beskrivning", 
+    "memberCount": "Antal medlemmar",
+    "recipients": "Mottagare",
+    "selectGroupPrompt": "Välj en grupp för att se detaljer",
+    "confirmTitle": "Bekräfta sändning",
+    "confirmMessage": "Du håller på att skicka ett meddelande till {{count}} mottagare i gruppen \"{{group}}\".",
+    "confirmButton": "Skicka",
+    "cancelButton": "Avbryt",
+    "success": "Meddelanden skickade",
+    "error": "Kunde inte skicka meddelanden",
+    "errors": {
+      "noGroup": "Välj en grupp",
+      "noMessage": "Meddelandet får inte vara tomt",
+      "noScheduleTime": "Välj en schemalagd tid",
+      "noSenderId": "Välj ett avsändar-ID",
+      "invalidDate": "Ogiltigt datumformat"
+    }
   }
 }

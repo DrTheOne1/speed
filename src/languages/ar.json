@@ -584,6 +584,7 @@
     "memberCount": "عدد الأعضاء",
     "recipients": "المستلمون",
     "members": "أعضاء",
-    "selectGroupPrompt": "اختر مجموعة لعرض التفاصيل"
+    "selectGroupPrompt": "اختر مجموعة لعرض التفاصيل",
+    "senderLabel": "اختر معرف المرسل"
   }
 }

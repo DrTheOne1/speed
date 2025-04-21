@@ -221,6 +221,52 @@ export default function SendGroupMessages() {
     setRenderKey(prev => prev + 1);
   }, [language]);
 
+  // Replace or update your existing validatePhoneNumbers function
+  const validatePhoneNumbers = (contacts: Contact[]) => {
+    const invalidContacts: { name: string; phone: string }[] = [];
+    
+    contacts.forEach(contact => {
+      // Clean the number first
+      const cleanNumber = contact.phone_number.replace(/[\s\-\(\)\.]/g, '');
+      
+      // Special case for Swedish numbers
+      if (cleanNumber.startsWith('+46') && cleanNumber.length >= 10) {
+        // Swedish numbers are valid, skip validation
+        return;
+      }
+      
+      // For other numbers, perform validation
+      try {
+        if (!cleanNumber.startsWith('+')) {
+          // Missing country code
+          invalidContacts.push({
+            name: contact.name, 
+            phone: contact.phone_number
+          });
+          return;
+        }
+        
+        // Accept any number that starts with + and has at least 8 digits
+        if (cleanNumber.startsWith('+') && cleanNumber.length >= 8) {
+          return; // Valid enough
+        }
+        
+        // Only get here for obviously invalid numbers
+        invalidContacts.push({
+          name: contact.name, 
+          phone: contact.phone_number
+        });
+      } catch (e) {
+        invalidContacts.push({
+          name: contact.name, 
+          phone: contact.phone_number
+        });
+      }
+    });
+    
+    return invalidContacts;
+  };
+
   // Send SMS mutation
   const sendSMSMutation = useMutation({
     mutationFn: async (data: SendGroupMessageFormData) => {
@@ -260,7 +306,11 @@ export default function SendGroupMessages() {
           throw new Error(`Insufficient credits. Required: ${requiredCredits}, Available: ${userData.credits}`);
         }
 
-        // Insert messages into the database and get their IDs
+        const minutesFromNow = data.scheduleTime 
+          ? Math.round((data.scheduleTime.getTime() - new Date().getTime()) / 60000) 
+          : null;
+
+        // Insert messages into the database with the new field
         const { data: messagesData, error: insertError } = await supabase
           .from('messages')
           .insert(
@@ -270,8 +320,11 @@ export default function SendGroupMessages() {
               sender_id: selectedSender,
               recipient: contact.phone_number,
               message: data.message,
-              scheduled_for: data.scheduled ? data.scheduleTime : null,
-              status: data.scheduled ? 'scheduled' : 'pending'
+              scheduled_for: data.scheduled && data.scheduleTime 
+                ? data.scheduleTime.toISOString() 
+                : null,
+              minutes_from_now: minutesFromNow,  // Store the relative time
+              status: 'pending' // ✅ CORRECT
             }))
           )
           .select('id, recipient');
@@ -283,31 +336,61 @@ export default function SendGroupMessages() {
 
         // If not scheduled, send messages immediately
         if (!data.scheduled) {
-          const endpoint = 'send-sms'; // Make sure this matches your single message endpoint
+          const endpoint = 'send-sms';
           
           for (const messageData of messagesData) {
-            const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${session.access_token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  gateway_id: userData.gateway_id,
-                  sender_id: selectedSender,
-                  recipient: messageData.recipient, // Single recipient, not an array
-                  message: data.message,
-                  message_id: messageData.id // Important: include message_id
-                }),
-              }
-            );
+            // In your edge function, add status updates:
+            // 1. Mark as processing first
+            await supabase
+              .from('messages')
+              .update({ status: 'processing' })
+              .eq('id', messageData.id);
 
-            if (!response.ok) {
-              const error = await response.json();
-              console.error(`Failed to send message to ${messageData.recipient}:`, error);
-              // Continue with other messages instead of throwing
+            try {
+              // Send message logic
+              const response = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    gateway_id: userData.gateway_id,
+                    sender_id: selectedSender,
+                    recipient: messageData.recipient,
+                    message: data.message,
+                    message_id: messageData.id
+                  }),
+                }
+              );
+
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to send message');
+              }
+
+              // Update to sent if successful
+              await supabase
+                .from('messages')
+                .update({ 
+                  status: 'sent',
+                  sent_at: new Date().toISOString() 
+                })
+                .eq('id', messageData.id);
+
+            } catch (error) {
+              console.error(`Error sending message ${messageData.id}:`, error);
+
+              // Mark as failed with error message
+              await supabase
+                .from('messages')
+                .update({ 
+                  status: 'failed',
+                  error_message: error.message 
+                })
+                .eq('id', messageData.id);
             }
           }
         }
@@ -338,23 +421,31 @@ export default function SendGroupMessages() {
     
     // Add validation for sender_id
     if (!selectedSender) {
-      toast.error(t('sendGroupMessages.error.noSenderId'));
+      toast.error(t('sendGroupMessages.errors.noSenderId'));
       return;
     }
     
     // Validate form data before showing confirmation
     if (!selectedGroup) {
-      toast.error(t('sendGroupMessages.error.noGroup'));
+      toast.error(t('sendGroupMessages.errors.noGroup'));
       return;
     }
     
     if (!formData.message.trim()) {
-      toast.error(t('sendGroupMessages.error.noMessage'));
+      toast.error(t('sendGroupMessages.errors.noMessage'));
       return;
     }
     
     if (formData.scheduled && !formData.scheduleTime) {
-      toast.error(t('sendGroupMessages.error.noScheduleTime'));
+      toast.error(t('sendGroupMessages.errors.noScheduleTime'));
+      return;
+    }
+    
+    // Add phone number validation
+    const invalidPhones = validatePhoneNumbers(groupContacts);
+    if (invalidPhones.length > 0) {
+      const errorMessage = `The following contacts have invalid phone numbers:\n${invalidPhones.map(c => `${c.name}: ${c.phone}`).join('\n')}`;
+      toast.error(errorMessage);
       return;
     }
     
@@ -521,8 +612,8 @@ export default function SendGroupMessages() {
 
             {/* Sender Selection */}
             <div>
-              <label htmlFor="sender_id" className="block text-sm font-medium text-gray-700">
-                {t('sendGroupMessages.senderLabel')}
+              <label className="block text-sm font-medium text-gray-700">
+                {t('sendGroupMessages.senderLabel') || 'Avsändar-ID'}
               </label>
               <select
                 id="sender_id"
@@ -637,7 +728,15 @@ export default function SendGroupMessages() {
                     type="datetime-local"
                     id="scheduleTime"
                     name="scheduleTime"
-                    onChange={e => setFormData({...formData, scheduleTime: new Date(e.target.value)})}
+                    onChange={e => {
+                      try {
+                        const dateValue = e.target.value ? new Date(e.target.value) : null;
+                        setFormData({...formData, scheduleTime: dateValue});
+                      } catch (err) {
+                        console.error("Invalid date format:", err);
+                        toast.error(t('sendGroupMessages.errors.invalidDate'));
+                      }
+                    }}
                     className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                   />
                 </div>
@@ -738,3 +837,12 @@ export default function SendGroupMessages() {
     </div>
   );
 }
+
+// Modify your Edge Function to use this for comparison
+const now = new Date().toISOString();
+const { data, error } = await supabase
+  .from('messages')
+  .select('*')
+  .eq('status', 'pending')
+  .not('scheduled_for', 'is', null)
+  .lte('scheduled_for', now);

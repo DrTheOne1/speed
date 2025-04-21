@@ -5,13 +5,14 @@ import { supabase } from '../lib/supabase';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
+import { sendMessage, processScheduledMessages } from '../utils/messageProcessing';
 
 interface Message {
   id: string;
   recipient: string;
   message: string;
   scheduled_for: string;
-  status: 'scheduled' | 'sent' | 'failed' | 'cancelled';
+  status: 'pending' | 'processing' | 'sent' | 'failed' | 'cancelled';
 }
 
 interface RescheduleParams {
@@ -75,7 +76,10 @@ export default function Scheduled() {
       try {
         const { error } = await supabase
           .from('messages')
-          .update({ scheduled_for: scheduledFor })
+          .update({ 
+            scheduled_for: scheduledFor,
+            status: 'pending'
+          })
           .eq('id', id);
 
         if (error) throw error;
@@ -186,7 +190,7 @@ export default function Scheduled() {
             <option value="all">{t('scheduled.filters.all')}</option>
             <option value="upcoming">{t('scheduled.filters.upcoming')}</option>
             <option value="past">{t('scheduled.filters.past')}</option>
-            <option value="scheduled">{t('scheduled.status.scheduled')}</option>
+            <option value="pending">{t('scheduled.status.pending')}</option>
             <option value="sent">{t('scheduled.status.sent')}</option>
             <option value="failed">{t('scheduled.status.failed')}</option>
             <option value="cancelled">{t('scheduled.status.cancelled')}</option>
@@ -249,14 +253,14 @@ export default function Scheduled() {
                             <button
                               onClick={() => handleEditMessage(message)}
                               className="text-yellow-600 hover:text-yellow-900 transition-colors duration-200"
-                              disabled={message.status !== 'scheduled'}
+                              disabled={message.status !== 'pending'}
                             >
                               <Edit2 className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleCancelMessage(message.id)}
                               className="text-orange-600 hover:text-orange-900 transition-colors duration-200"
-                              disabled={message.status !== 'scheduled'}
+                              disabled={message.status !== 'pending'}
                             >
                               <XCircle className="h-4 w-4" />
                             </button>
@@ -274,6 +278,313 @@ export default function Scheduled() {
                 </table>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Debug Section */}
+      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium">Debug Information</h3>
+        <div className="mt-2 grid grid-cols-2 gap-4">
+          <p>Server Time: {new Date().toISOString()}</p>
+          <p>Browser Time: {new Date().toString()}</p>
+          
+          <div className="col-span-2 flex flex-wrap gap-2">
+            <button 
+              onClick={async () => {
+                const { data, error } = await supabase
+                  .from('messages')
+                  .select('*')
+                  .eq('status', 'pending')
+                  .not('scheduled_for', 'is', null);
+                
+                console.log('Pending scheduled messages:', data);
+                console.log('Error if any:', error);
+                alert(`Found ${data?.length || 0} pending scheduled messages`);
+              }}
+              className="px-4 py-2 bg-blue-500 text-white rounded text-sm"
+            >
+              Check Pending Messages
+            </button>
+            
+            <button 
+              onClick={async () => {
+                const now = new Date().toISOString();
+                const { data, error } = await supabase
+                  .from('messages')
+                  .select('*')
+                  .eq('status', 'pending')
+                  .not('scheduled_for', 'is', null)
+                  .lte('scheduled_for', now);
+                
+                console.log('Ready to process messages:', data);
+                console.log('Error if any:', error);
+                alert(`Found ${data?.length || 0} messages ready to process`);
+              }}
+              className="px-4 py-2 bg-green-500 text-white rounded text-sm"
+            >
+              Check Ready Messages
+            </button>
+            
+            <button 
+              onClick={async () => {
+                const { data, error } = await supabase
+                  .from('messages')
+                  .select('*')
+                  .eq('status', 'processing');
+                
+                console.log('Stuck in processing:', data);
+                console.log('Error if any:', error);
+                alert(`Found ${data?.length || 0} messages stuck in processing`);
+              }}
+              className="px-4 py-2 bg-orange-500 text-white rounded text-sm"
+            >
+              Check Stuck Messages
+            </button>
+
+            <button 
+              onClick={async () => {
+                if (!window.confirm('Reset stuck messages? This will mark processing messages back to pending.')) return;
+                
+                const { data, error } = await supabase
+                  .from('messages')
+                  .update({ status: 'pending' })
+                  .eq('status', 'processing')
+                  .select();
+                
+                console.log('Reset messages:', data);
+                console.log('Error if any:', error);
+                alert(`Reset ${data?.length || 0} stuck messages to pending`);
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded text-sm"
+            >
+              Reset Stuck Messages
+            </button>
+
+            <button 
+              onClick={async () => {
+                if (!window.confirm('Force retry stuck messages? This will attempt to send them now.')) return;
+                
+                // First get authentication token
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                  alert('Authentication required. Please log in again.');
+                  return;
+                }
+                
+                // Get messages in processing state
+                const { data: processingMessages } = await supabase
+                  .from('messages')
+                  .select('*')
+                  .eq('status', 'processing');
+                  
+                if (!processingMessages?.length) {
+                  alert('No processing messages found to retry');
+                  return;
+                }
+                
+                let success = 0;
+                let failed = 0;
+                
+                // Manually retry each stuck message
+                for (const message of processingMessages) {
+                  try {
+                    // Call your edge function directly WITH AUTHENTICATION
+                    const response = await fetch(
+                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${session.access_token}`, // Add auth token
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          gateway_id: message.gateway_id,
+                          sender_id: message.sender_id,
+                          recipient: message.recipient,
+                          message: message.message,
+                          message_id: message.id
+                        }),
+                      }
+                    );
+                    
+                    // Add better error handling
+                    if (response.ok) {
+                      // Update status in the database
+                      await supabase
+                        .from('messages')
+                        .update({ 
+                          status: 'sent',
+                          sent_at: new Date().toISOString() 
+                        })
+                        .eq('id', message.id);
+                      
+                      success++;
+                    } else {
+                      // Get the actual error message from the response
+                      const errorData = await response.json().catch(() => ({}));
+                      console.error('Edge function error:', errorData);
+                      throw new Error(errorData.message || 'API call failed');
+                    }
+                  } catch (error) {
+                    console.error(`Error processing message ${message.id}:`, error);
+                    
+                    // Mark as failed
+                    await supabase
+                      .from('messages')
+                      .update({ 
+                        status: 'failed',
+                        error_message: error.message || 'Manual retry failed'
+                      })
+                      .eq('id', message.id);
+                    
+                    failed++;
+                  }
+                }
+                
+                alert(`Processed ${success + failed} messages: ${success} succeeded, ${failed} failed`);
+                refetch();
+              }}
+              className="px-4 py-2 bg-purple-500 text-white rounded text-sm"
+            >
+              Force Retry Stuck Messages
+            </button>
+
+            <button 
+              onClick={async () => {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                  alert('Not authenticated');
+                  return;
+                }
+
+                try {
+                  // First, get a valid gateway ID from your database
+                  const { data: userGateway } = await supabase
+                    .from('users')
+                    .select('gateway_id')
+                    .eq('id', session.user.id)
+                    .single();
+                    
+                  if (!userGateway?.gateway_id) {
+                    alert('No gateway configured for your account');
+                    return;
+                  }
+                  
+                  console.log("Using gateway ID:", userGateway.gateway_id);
+                  
+                  const response = await fetch(
+                    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        gateway_id: userGateway.gateway_id,
+                        sender_id: "TEST",
+                        recipient: "+1234567890",
+                        message: "Test message",
+                        message_id: "test-id"
+                      }),
+                    }
+                  );
+                  
+                  console.log('Status:', response.status);
+                  console.log('Status text:', response.statusText);
+                  
+                  let responseText;
+                  try {
+                    responseText = await response.text();
+                    console.log('Raw response:', responseText);
+                    
+                    // Try to parse as JSON if possible
+                    try {
+                      const data = JSON.parse(responseText);
+                      console.log('JSON response:', data);
+                      alert(`Edge function response: ${JSON.stringify(data)}`);
+                    } catch (e) {
+                      alert(`Edge function response: ${responseText}`);
+                    }
+                  } catch (e) {
+                    console.error('Could not read response:', e);
+                  }
+                  
+                  alert('Edge function test: ' + (response.ok ? 'Success' : 'Failed'));
+                } catch (error) {
+                  console.error('Edge function test error:', error);
+                  alert('Edge function test error: ' + error.message);
+                }
+              }}
+              className="px-4 py-2 bg-blue-500 text-white rounded text-sm"
+            >
+              Test Edge Function
+            </button>
+
+            <button 
+              onClick={async () => {
+                if (!window.confirm('This will identify and mark messages with invalid phone numbers as failed. Continue?')) return;
+                
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                  alert('Not authenticated');
+                  return;
+                }
+                
+                try {
+                  // Get pending messages
+                  const { data: pendingMessages } = await supabase
+                    .from('messages')
+                    .select('id,recipient')
+                    .eq('status', 'pending');
+                    
+                  if (!pendingMessages?.length) {
+                    alert('No pending messages found');
+                    return;
+                  }
+                  
+                  const invalid = [];
+                  
+                  for (const msg of pendingMessages) {
+                    try {
+                      // Very basic check - can be improved
+                      const isValid = /^\+[1-9]\d{1,14}$/.test(msg.recipient.replace(/\s+/g, ''));
+                      if (!isValid) {
+                        invalid.push(msg.id);
+                      }
+                    } catch (e) {
+                      invalid.push(msg.id);
+                    }
+                  }
+                  
+                  if (invalid.length === 0) {
+                    alert('No invalid phone numbers found');
+                    return;
+                  }
+                  
+                  // Mark invalid numbers as failed
+                  const { data: updated } = await supabase
+                    .from('messages')
+                    .update({ 
+                      status: 'failed',
+                      error_message: 'Invalid phone number format'
+                    })
+                    .in('id', invalid)
+                    .select();
+                    
+                  alert(`Found and marked ${updated.length} messages with invalid phone numbers as failed`);
+                  refetch();
+                } catch (error) {
+                  console.error('Error checking phone numbers:', error);
+                  alert('Error: ' + error.message);
+                }
+              }}
+              className="px-4 py-2 bg-yellow-500 text-white rounded text-sm"
+            >
+              Check Invalid Numbers
+            </button>
           </div>
         </div>
       </div>

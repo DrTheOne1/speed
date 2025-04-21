@@ -12,10 +12,18 @@ interface RequestBody {
 
 serve(async (req) => {
   try {
-    // Create a Supabase client with the Auth context of the logged in user
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
+    // Check if the request is from the scheduled messages function
+    const isScheduledMessage = req.headers.get('Authorization')?.includes(SUPABASE_SERVICE_ROLE_KEY);
+    const userId = isScheduledMessage ? req.headers.get('X-User-Id') : null;
+
+    // Create appropriate Supabase client based on the request source
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      SUPABASE_URL,
+      isScheduledMessage ? SUPABASE_SERVICE_ROLE_KEY : SUPABASE_ANON_KEY,
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
@@ -23,27 +31,34 @@ serve(async (req) => {
       }
     );
 
-    // Get the user from the auth token
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
+    let user;
+    if (isScheduledMessage && userId) {
+      // For scheduled messages, get the user directly using the service role
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      if (userError || !userData) {
+        throw new Error('User not found');
+      }
+      user = { id: userId };
+    } else {
+      // For direct API calls, get the user from the auth token
+      const { data: { user: authUser }, error: authError } = await supabaseClient.auth.getUser();
+      if (authError || !authUser) {
+        throw new Error('Unauthorized');
+      }
+      user = authUser;
     }
 
     // Parse the request body
-    const { gateway_id, recipient, message, sender_id, message_id, scheduled_for } = await req.json() as RequestBody;
+    const { gateway_id, recipient, message, sender_id, message_id } = await req.json() as RequestBody;
 
     // Validate required fields
     if (!gateway_id || !recipient || !message || !sender_id || !message_id) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Missing required fields');
     }
 
     // Get the gateway configuration
@@ -54,10 +69,7 @@ serve(async (req) => {
       .single();
 
     if (gatewayError || !gateway) {
-      return new Response(
-        JSON.stringify({ error: 'Gateway not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Gateway not found');
     }
 
     // Check if the user has access to this gateway
@@ -69,10 +81,7 @@ serve(async (req) => {
       .single();
 
     if (userGatewayError || !userGateway) {
-      return new Response(
-        JSON.stringify({ error: 'User does not have access to this gateway' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
+      throw new Error('User does not have access to this gateway');
     }
 
     // Check if the sender_id is allowed for this gateway
@@ -83,34 +92,11 @@ serve(async (req) => {
       .single();
 
     if (senderNamesError || !senderNames?.sender_names?.includes(sender_id)) {
-      return new Response(
-        JSON.stringify({ error: 'Sender ID not allowed for this user' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // If the message is scheduled, update the message status
-    if (scheduled_for) {
-      const { error: updateError } = await supabaseClient
-        .from('messages')
-        .update({ status: 'scheduled' })
-        .eq('id', message_id);
-
-      if (updateError) {
-        return new Response(
-          JSON.stringify({ error: 'Failed to update message status' }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ message: 'Message scheduled successfully' }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Sender ID not allowed for this user');
     }
 
     // Send the message using the gateway's API
-    const response = await fetch(gateway.api_url, {
+    const gatewayResponse = await fetch(gateway.api_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -123,22 +109,27 @@ serve(async (req) => {
       }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to send message');
+    if (!gatewayResponse.ok) {
+      let errorData;
+      try {
+        errorData = await gatewayResponse.json();
+      } catch (e) {
+        errorData = { message: 'Failed to parse gateway response' };
+      }
+      throw new Error(errorData.message || `Gateway returned status ${gatewayResponse.status}`);
     }
 
     // Update the message status to sent
     const { error: updateError } = await supabaseClient
       .from('messages')
-      .update({ status: 'sent' })
+      .update({ 
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+      })
       .eq('id', message_id);
 
     if (updateError) {
-      return new Response(
-        JSON.stringify({ error: 'Failed to update message status' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Failed to update message status');
     }
 
     return new Response(
@@ -146,9 +137,18 @@ serve(async (req) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    // Log the error for debugging
+    console.error('Error sending message:', error);
+
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: error.message || 'An unknown error occurred',
+        details: error.stack
+      }),
+      { 
+        status: error.message?.includes('Unauthorized') ? 401 : 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 }); 

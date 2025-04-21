@@ -6,12 +6,14 @@ import { z } from 'zod';
 import { Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { calculateMessageSegments, calculateRequiredCredits, getMessageDetails, isGsm7Message } from '../utils/smsUtils';
+import { useTranslation } from 'react-i18next';
+import SMSCharacterCounter from '../components/SMSCharacterCounter';
 
-// 1. Update the schema to accept any input format
 const testSMSSchema = z.object({
   sender_id: z.string().min(1, 'Sender ID is required'),
-  country_code: z.string().optional(), // Make country code optional
-  recipient: z.string().min(1, 'Recipient is required'), // Only check it's not empty
+  country_code: z.string().optional(),
+  recipient: z.string().min(1, 'Recipient is required'),
   message: z.string().min(1, 'Message is required'),
 });
 
@@ -21,6 +23,15 @@ export default function SendSMS() {
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
+  const [messageDetails, setMessageDetails] = useState({
+    segments: 0,
+    remaining: 160,
+    isGsm: true,
+    charsPerSegment: 160,
+    totalChars: 0,
+    maxChars: 160,
+    exceedsLimit: false
+  });
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -32,14 +43,13 @@ export default function SendSMS() {
     getCurrentUser();
   }, []);
 
-  // Get user data including gateway_id and sender_names
   const { data: userData } = useQuery({
     queryKey: ['user-data', userId],
     queryFn: async () => {
       if (!userId) return null;
       const { data, error } = await supabase
         .from('users')
-        .select('gateway_id, sender_names')
+        .select('gateway_id, sender_names, credits')
         .eq('id', userId)
         .single();
       
@@ -58,7 +68,12 @@ export default function SendSMS() {
 
   const selectedCountryCode = watch('country_code');
 
-  // Update the onSubmit function to handle phone number formatting
+  useEffect(() => {
+    const message = watch('message') || '';
+    const details = getMessageDetails(message, 5);
+    setMessageDetails(details);
+  }, [watch('message')]);
+
   const onSubmit = async (data: TestSMSForm) => {
     try {
       if (!userData?.gateway_id) {
@@ -66,33 +81,34 @@ export default function SendSMS() {
         return;
       }
 
+      const requiredCredits = calculateRequiredCredits(data.message);
+      if (userData.credits < requiredCredits) {
+        toast.error(`Insufficient credits. Required: ${requiredCredits}, Available: ${userData.credits || 0}`);
+        return;
+      }
+
       setLoading(true);
 
-      // Clean up the recipient number (remove spaces, dashes, parentheses)
       let cleanRecipient = data.recipient.replace(/[\s\-\(\)]/g, '');
 
-      // Add country code if not present
       if (!cleanRecipient.startsWith('+')) {
         cleanRecipient = `+${data.country_code}${cleanRecipient}`;
       }
 
-      // Store the formatted number in the database
       const { data: messageData, error: dbError } = await supabase.from('messages').insert({
         gateway_id: userData.gateway_id,
-        recipient: cleanRecipient, // Use cleaned number
+        recipient: cleanRecipient,
         message: data.message,
         status: 'pending',
         sender_id: data.sender_id,
-        user_id: userId // Make sure user_id is included
+        user_id: userId
       }).select().single();
 
       if (dbError) throw dbError;
 
-      // Get session for API call
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('No access token found');
 
-      // Send the properly formatted number to the Edge Function
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
         {
@@ -103,7 +119,7 @@ export default function SendSMS() {
           },
           body: JSON.stringify({
             gateway_id: userData.gateway_id,
-            recipient: cleanRecipient, // Use the formatted number
+            recipient: cleanRecipient,
             message: data.message,
             sender_id: data.sender_id,
             message_id: messageData.id,
@@ -111,7 +127,6 @@ export default function SendSMS() {
         }
       );
 
-      // Handle response
       const result = await response.json();
       if (!response.ok) {
         console.error('Server error details:', result);
@@ -128,6 +143,202 @@ export default function SendSMS() {
       setLoading(false);
     }
   };
+
+  const sendSMSMutation = useMutation({
+    mutationFn: async (data: TestSMSForm) => {
+      setLoading(true);
+      try {
+        console.log('Starting message send process...', {
+          recipient: data.recipient,
+          sender_id: data.sender_id,
+          hasMessage: !!data.message,
+          user_id: userData?.id,
+          gateway_id: userData?.gateway_id
+        });
+
+        // Validate user credits
+        if (!userData?.credits || userData.credits <= 0) {
+          console.error('Credit validation failed:', {
+            currentCredits: userData?.credits,
+            userId: userData?.id
+          });
+          throw new Error('Insufficient credits. Please purchase more credits to send messages.');
+        }
+
+        // Save form data to local storage
+        savePhoneNumber(data.recipient);
+        saveSenderId(data.sender_id);
+
+        // Check if message is scheduled
+        const isScheduled = data.scheduledFor && new Date(data.scheduledFor) > new Date();
+        
+        if (isScheduled) {
+          // Insert into scheduled_messages table
+          const { data: scheduledMessage, error: scheduleError } = await supabase
+            .from('scheduled_messages')
+            .insert({
+              user_id: userData.id,
+              gateway_id: userData.gateway_id,
+              sender_id: data.sender_id,
+              recipient: data.recipient,
+              message: data.message,
+              scheduled_for: new Date(data.scheduledFor).toISOString(),
+              status: 'pending'
+            })
+            .select()
+            .single();
+
+          if (scheduleError) {
+            console.error('Failed to schedule message:', scheduleError);
+            throw new Error(`Failed to schedule message: ${scheduleError.message}`);
+          }
+
+          toast.success('Message scheduled successfully!', {
+            duration: 3000,
+            style: {
+              background: '#10B981',
+              color: '#fff',
+            },
+          });
+          return true;
+        }
+
+        // For immediate messages, proceed with sending
+        console.log('Sending immediate message...');
+
+        // Get auth session for Edge Function call
+        console.log('Getting auth session...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw new Error('Authentication error: Failed to get session');
+        }
+        
+        if (!session?.access_token) {
+          console.error('No access token in session');
+          throw new Error('Authentication error: No access token found');
+        }
+
+        // Send message using Edge Function
+        console.log('Calling Edge Function to send message...');
+        const endpoint = 'send-twilio-sms';
+        const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`;
+        console.log('Edge Function URL:', edgeFunctionUrl);
+
+        const payload = {
+          gateway_id: userData.gateway_id,
+          sender_id: data.sender_id,
+          recipient: data.recipient,
+          message: data.message
+        };
+        console.log('Request payload:', payload);
+
+        try {
+          const response = await fetch(edgeFunctionUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          console.log('Edge Function response status:', response.status);
+          let responseData;
+          const responseText = await response.text();
+          try {
+            responseData = JSON.parse(responseText);
+            console.log('Edge Function response:', responseData);
+          } catch (e) {
+            console.error('Failed to parse response:', responseText);
+            throw new Error('Invalid response from server');
+          }
+
+          if (!response.ok) {
+            throw new Error(responseData.error || `HTTP error! status: ${response.status}`);
+          }
+
+          // Deduct credit after successful send
+          console.log('Deducting credit...');
+          const { error: creditError } = await supabase
+            .from('users')
+            .update({ 
+              credits: (userData.credits - 1) 
+            })
+            .eq('id', userData.id);
+
+          if (creditError) {
+            console.error('Error updating credits:', {
+              error: creditError,
+              code: creditError.code,
+              details: creditError.details
+            });
+            throw new Error(`Failed to update credits: ${creditError.message}`);
+          }
+
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['user'] });
+          console.log('Message sent successfully!');
+
+          return true;
+        } catch (fetchError: any) {
+          console.error('Edge Function error:', {
+            error: fetchError,
+            message: fetchError.message,
+            url: edgeFunctionUrl,
+            status: fetchError.status,
+            statusText: fetchError.statusText
+          });
+          throw new Error(`Edge Function error: ${fetchError.message}`);
+        }
+      } catch (err: any) {
+        console.error('Send message process failed:', {
+          error: err,
+          message: err.message,
+          stack: err.stack,
+          type: err.constructor.name
+        });
+        throw new Error(err.message || 'Failed to send message');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onSuccess: () => {
+      toast.success('Message sent successfully!', {
+        duration: 3000,
+        style: {
+          background: '#10B981',
+          color: '#fff',
+        },
+      });
+      reset();
+      setMessageDetails({
+        segments: 0,
+        remaining: 160,
+        isGsm: true,
+        charsPerSegment: 160,
+        totalChars: 0,
+        maxChars: 160,
+        exceedsLimit: false
+      });
+    },
+    onError: (error: Error) => {
+      const errorMessage = error.message || 'Failed to send message';
+      console.error('Error in mutation:', {
+        error,
+        message: errorMessage,
+        stack: error.stack
+      });
+      toast.error(errorMessage, {
+        duration: 5000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      });
+    },
+  });
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -167,7 +378,6 @@ export default function SendSMS() {
           )}
         </div>
 
-        {/* Replace PhoneInput with a simple input */}
         <div>
           <label htmlFor="recipient" className="block text-sm font-medium text-gray-700">
             Recipient Phone Number
@@ -184,7 +394,6 @@ export default function SendSMS() {
                   <option value="46">+46</option>
                   <option value="1">+1</option>
                   <option value="44">+44</option>
-                  {/* Add more country codes as needed */}
                 </select>
               )}
             />
@@ -216,17 +425,26 @@ export default function SendSMS() {
           <Controller
             name="message"
             control={control}
+            rules={{ required: 'Message is required' }}
             render={({ field }) => (
-              <textarea
-                {...field}
-                rows={4}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
+              <div>
+                <textarea
+                  id="message"
+                  {...field}
+                  rows={4}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  maxLength={isGsm7Message(field.value) 
+                    ? (160 + (4 * 153)) // 5 pages for GSM-7 
+                    : (70 + (4 * 67))   // 5 pages for Unicode/Arabic
+                  }
+                />
+                <SMSCharacterCounter messageDetails={messageDetails} />
+                {errors.message && (
+                  <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>
+                )}
+              </div>
             )}
           />
-          {errors.message && (
-            <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>
-          )}
         </div>
 
         <button

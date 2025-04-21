@@ -554,6 +554,7 @@
     "memberCount": "Member Count",
     "recipients": "Recipients",
     "members": "members",
-    "selectGroupPrompt": "Select a group to view details"
+    "selectGroupPrompt": "Select a group to view details",
+    "senderLabel": "Select Sender ID"
   }
 }
