@@ -53,11 +53,13 @@ function App() {
           <LanguageProvider>
             <Router>
               <Routes>
+                {/* Public routes - outside of ProtectedRoute */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/activation-success" element={<ActivationSuccess />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 
+                {/* Protected routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route element={<Layout />}>
                     {/* Admin routes */}
