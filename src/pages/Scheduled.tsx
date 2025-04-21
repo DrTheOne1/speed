@@ -1,11 +1,12 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Trash2, Calendar, Clock, Edit2, Eye, XCircle } from 'lucide-react';
+import { Trash2, Calendar, Clock, Edit2, Eye, XCircle, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { sendMessage, processScheduledMessages } from '../utils/messageProcessing';
+import toast from 'react-hot-toast';
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ export default function Scheduled() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateInput, setDateInput] = useState<string>('');
   const [timeInput, setTimeInput] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { data: messages, refetch } = useQuery<Message[]>({
     queryKey: ['scheduled-messages'],
@@ -159,6 +161,139 @@ export default function Scheduled() {
     return matchesSearch && message.status === filter;
   });
 
+  const checkPendingMessages = async () => {
+    try {
+      // Check authentication
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      if (authError) {
+        console.error('Auth error:', authError);
+        toast.error('Authentication error: ' + authError.message);
+        return;
+      }
+      if (!session) {
+        console.error('No active session');
+        toast.error('Not authenticated - Please log in again');
+        return;
+      }
+
+      setIsProcessing(true);
+      
+      // Log request details
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-scheduled-messages`;
+      console.log('Calling Edge Function:', apiUrl);
+      console.log('Auth token present:', !!session.access_token);
+      
+      // Make the request with timeout handling
+      let response;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+      } catch (fetchError: any) {
+        console.error('Fetch error details:', {
+          name: fetchError.name,
+          message: fetchError.message,
+          cause: fetchError.cause,
+          stack: fetchError.stack
+        });
+        
+        if (fetchError.name === 'AbortError') {
+          toast.error('Request timed out - The server took too long to respond');
+          return;
+        }
+        
+        if (fetchError.message.includes('Failed to fetch')) {
+          toast.error('Network error - Please check your internet connection');
+          return;
+        }
+        
+        toast.error('Connection error: ' + fetchError.message);
+        return;
+      }
+      
+      // Log response details
+      console.log('Response:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries([...response.headers.entries()])
+      });
+      
+      // Handle response
+      let responseText;
+      try {
+        responseText = await response.text();
+        console.log('Response text:', responseText);
+      } catch (textError) {
+        console.error('Error reading response text:', textError);
+        toast.error('Error reading server response');
+        return;
+      }
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log('Parsed response:', responseData);
+      } catch (parseError) {
+        console.log('Response is not JSON:', parseError);
+        responseData = responseText;
+      }
+      
+      if (response.ok) {
+        const message = typeof responseData === 'object' && responseData.processed 
+          ? `Successfully processed ${responseData.processed} messages` 
+          : 'Messages processed successfully';
+        toast.success(message);
+        refetch();
+      } else {
+        const errorMessage = typeof responseData === 'object' && responseData.error
+          ? responseData.error
+          : typeof responseData === 'string'
+            ? responseData
+            : `Server error: ${response.status} ${response.statusText}`;
+        console.error('Processing error:', errorMessage);
+        toast.error(errorMessage);
+      }
+    } catch (error: any) {
+      console.error('Error in checkPendingMessages:', error);
+      toast.error(error?.message || 'An unexpected error occurred');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      console.log('Fetching user data...');
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      console.log('Auth user:', authUser);
+      if (!authUser) throw new Error('No user found');
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, credits')
+        .eq('id', authUser.id)
+        .single();
+
+      console.log('User data:', data);
+      console.log('User error:', error);
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
   if (!messages) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -175,6 +310,14 @@ export default function Scheduled() {
           <p className="mt-1 text-sm text-gray-500">{t('scheduled.description')}</p>
         </div>
         <div className="flex space-x-4">
+          <button
+            onClick={checkPendingMessages}
+            disabled={isProcessing}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+            {isProcessing ? 'Processing...' : 'Check Pending Messages'}
+          </button>
           <input
             type="text"
             placeholder={t('scheduled.search.placeholder')}
@@ -419,6 +562,11 @@ export default function Scheduled() {
                           sent_at: new Date().toISOString() 
                         })
                         .eq('id', message.id);
+                      
+                      const { error: creditError } = await supabase
+                        .from('users')
+                        .update({ credits: user.credits - 1 })
+                        .eq('id', message.user_id);
                       
                       success++;
                     } else {

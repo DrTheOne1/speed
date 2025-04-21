@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from '../contexts/TranslationContext';
-import { Clock, Send, Users, Plus } from 'lucide-react';
+import { Clock, Send, Users, Plus, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { classNames } from '../utils/classNames';
 
@@ -267,6 +267,24 @@ export default function SendGroupMessages() {
     return invalidContacts;
   };
 
+  // Add this query near the beginning of your component, after other useQuery hooks
+  const { data: userData, refetch: refetchUserData } = useQuery({
+    queryKey: ['user-credits'],
+    queryFn: async () => {
+      if (!userId) return null;
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('credits')
+        .eq('id', userId)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId
+  });
+
   // Send SMS mutation
   const sendSMSMutation = useMutation({
     mutationFn: async (data: SendGroupMessageFormData) => {
@@ -409,6 +427,7 @@ export default function SendGroupMessages() {
       });
       setSelectedGroup(null);
       setGroupContacts([]);
+      refetchUserData(); // Refresh the credits data
     },
     onError: (error: Error) => {
       console.error('Error sending messages:', error);
@@ -487,9 +506,25 @@ export default function SendGroupMessages() {
 
   return (
     <div className={`container mx-auto px-4 py-8 ${direction}`} key={`group-messages-container-${language}`}>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6" key={`group-messages-title-${language}`}>
-        {t('sendGroupMessages.title')}
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t('sendGroupMessages.title')}
+        </h1>
+        
+        <div className="bg-white py-2 px-4 rounded-full shadow border border-gray-200 flex items-center">
+          <CreditCard className="h-5 w-5 text-indigo-600 mr-2" />
+          <span className="font-medium">
+            {userData?.credits !== undefined 
+              ? `${t('dashboard.credits.title')}: ${userData.credits}`
+              : t('dashboard.credits.loading')}
+          </span>
+          {(userData?.credits || 0) < 50 && (
+            <span className="ml-2 text-amber-600">
+              ({t('dashboard.credits.low')})
+            </span>
+          )}
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Main Form */}

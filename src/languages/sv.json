@@ -152,29 +152,9 @@
     "credits": {
       "title": "Tillgängliga krediter",
       "remaining": "{{count}} krediter återstår",
-      "low": "Dina krediter börjar ta slut"
-    },
-    "activity": {
-      "title": "Senaste aktivitet",
-      "empty": "Ingen nylig aktivitet",
-      "seeAll": "Se all aktivitet"
-    },
-    "stats": {
-      "title": "Prestanda",
-      "sent": "Skickade meddelanden",
-      "delivered": "Leveransfrekvens",
-      "failed": "Misslyckade"
-    },
-    "quickActions": {
-      "title": "Snabbåtgärder",
-      "send": "Skicka meddelande",
-      "contacts": "Hantera kontakter",
-      "templates": "SMS-mallar",
-      "billing": "Fakturering & prenumeration"
-    },
-    "alerts": {
-      "title": "Notiser",
-      "empty": "Inga nya notiser"
+      "low": "Dina krediter börjar ta slut",
+      "available": "Tillgängliga krediter",
+      "loading": "Laddar krediter..."
     }
   },
   "navigation": {

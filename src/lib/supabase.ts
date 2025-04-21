@@ -5,13 +5,30 @@ import { Database } from '../types/supabase';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Debugging environment variables
+console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL || 'Missing URL');
+console.log('Supabase Anon Key status:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing required Supabase environment variables. Please check your .env file.');
 }
 
-// Initialize Supabase client
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Initialize Supabase client with retry logic
+export const supabase = createClient<Database>(
+  supabaseUrl || '',
+  supabaseAnonKey || '',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    global: {
+      fetch: (...args) => fetch(...args) // Override with your retry logic if needed
+    }
+  }
+);
 
 // Test connection
 const testConnection = async () => {

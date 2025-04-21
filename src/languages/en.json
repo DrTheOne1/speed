@@ -129,33 +129,13 @@
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome back, {{name}}",
-    "summary": "Account Summary",
+    "summary": "Account Overview",
     "credits": {
       "title": "Available Credits",
       "remaining": "{{count}} credits remaining",
-      "low": "Your credits are running low"
-    },
-    "activity": {
-      "title": "Recent Activity",
-      "empty": "No recent activity",
-      "seeAll": "See all activity"
-    },
-    "stats": {
-      "title": "Performance",
-      "sent": "Messages Sent",
-      "delivered": "Delivery Rate",
-      "failed": "Failed"
-    },
-    "quickActions": {
-      "title": "Quick Actions",
-      "send": "Send Message",
-      "contacts": "Manage Contacts",
-      "templates": "SMS Templates",
-      "billing": "Billing & Subscription"
-    },
-    "alerts": {
-      "title": "Notifications",
-      "empty": "No new notifications"
+      "low": "Your credits are running low",
+      "available": "Available Credits",
+      "loading": "Loading credits..."
     }
   },
   "navigation": {

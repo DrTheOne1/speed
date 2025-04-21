@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Send } from 'lucide-react';
+import { Send, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { calculateMessageSegments, calculateRequiredCredits, getMessageDetails, isGsm7Message } from '../utils/smsUtils';
@@ -348,6 +348,20 @@ export default function SendSMS() {
           <p className="mt-2 text-sm text-gray-700">
             Send messages using your configured gateway
           </p>
+        </div>
+        
+        <div className="bg-white py-2 px-4 rounded-full shadow border border-gray-200 flex items-center">
+          <CreditCard className="h-5 w-5 text-indigo-600 mr-2" />
+          <span className="font-medium">
+            {userData?.credits !== undefined 
+              ? `Available Credits: ${userData.credits}`
+              : 'Loading credits...'}
+          </span>
+          {(userData?.credits || 0) < 50 && (
+            <span className="ml-2 text-amber-600">
+              (Low Balance)
+            </span>
+          )}
         </div>
       </div>
 
