@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '../contexts/TranslationContext';
 import { Link } from 'react-router-dom';
 
 export default function NotFound() {

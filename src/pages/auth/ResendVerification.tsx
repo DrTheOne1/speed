@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 export default function ResendVerification() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -21,7 +23,7 @@ export default function ResendVerification() {
       if (error) throw error;
       
       setSent(true);
-      toast.success('Verification email sent successfully');
+      toast.success(t('auth.verification.sent_success'));
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -34,12 +36,12 @@ export default function ResendVerification() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            Resend Verification Email
+            {t('auth.verification.title')}
           </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             {sent 
-              ? 'Check your email for the verification link' 
-              : 'Enter your email to receive a new verification link'}
+              ? t('auth.verification.check_email')
+              : t('auth.verification.enter_email')}
           </p>
         </div>
 
@@ -51,7 +53,7 @@ export default function ResendVerification() {
                   htmlFor="email"
                   className="absolute left-4 -top-2.5 bg-white dark:bg-gray-800 px-1 text-xs text-gray-500 dark:text-gray-400"
                 >
-                  Email address
+                  {t('common.email_address')}
                 </label>
                 <input
                   id="email"
@@ -70,7 +72,7 @@ export default function ResendVerification() {
                 disabled={loading}
                 className="w-full h-11 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Sending...' : 'Resend verification email'}
+                {loading ? t('common.sending') : t('auth.verification.resend_button')}
               </button>
             )}
 
@@ -79,7 +81,7 @@ export default function ResendVerification() {
                 to="/login"
                 className="text-sm text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300"
               >
-                Back to login
+                {t('auth.back_to_login')}
               </Link>
             </div>
           </form>

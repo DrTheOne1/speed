@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
+import { useTranslation } from '../contexts/TranslationContext';
 
 interface WithTranslationProps {
   children: React.ReactNode;
@@ -21,9 +21,10 @@ export const withTranslation = <P extends object>(
   WrappedComponent: React.ComponentType<P>
 ) => {
   const WithTranslation: React.FC<P & WithTranslationProps> = (props) => {
+    const { t } = useTranslation();
     return (
       <Suspense fallback={<LoadingFallback />}>
-        <WrappedComponent {...props} />
+        <WrappedComponent {...props} t={t} />
       </Suspense>
     );
   };

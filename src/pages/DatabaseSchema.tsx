@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '../contexts/TranslationContext';
 
 interface ColumnInfo {
   column_name: string;

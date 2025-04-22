@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 const AdminSettings: React.FC = () => {
   const { t } = useTranslation();

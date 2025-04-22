@@ -1,9 +1,0 @@
-{
-  "dashboard": {
-    "credits": {
-      "available": "Available Credits",
-      "loading": "Loading credits...",
-      "low": "Low Balance"
-    }
-  }
-}

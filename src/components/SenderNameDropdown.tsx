@@ -1,32 +1,62 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
+import { useTranslation } from '../contexts/TranslationContext';
 
 interface SenderNameDropdownProps {
   value: string;
   onChange: (value: string) => void;
-  senderNames: {value: string, label: string}[];
   className?: string;
-  placeholder?: string;
+  required?: boolean;
 }
 
-export function SenderNameDropdown({ 
+export const SenderNameDropdown: React.FC<SenderNameDropdownProps> = ({
   value,
   onChange,
-  senderNames,
-  className = "",
-  placeholder = "Select sender name"
-}: SenderNameDropdownProps) {
+  className = '',
+  required = true
+}) => {
+  const { t } = useTranslation();
+  const { data: senders, isLoading } = useQuery({
+    queryKey: ['senders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('senders')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`w-full p-2 border rounded ${className}`}
-    >
-      <option value="">{placeholder}</option>
-      {senderNames.map(option => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <div className="w-100">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`form-select ${className}`}
+        disabled={isLoading}
+        required={required}
+      >
+        <option value="">{t('sendSMS.selectSender') || 'Select sender ID'}</option>
+        {senders?.map((sender) => (
+          <option key={sender.id} value={sender.id}>
+            {sender.name}
+          </option>
+        ))}
+      </select>
+      
+      {isLoading && (
+        <div className="invalid-feedback d-block mt-2">
+          {t('common.loading') || 'Loading...'}
+        </div>
+      )}
+      
+      {senders?.length === 0 && !isLoading && (
+        <div className="invalid-feedback d-block mt-2">
+          {t('sendSMS.configureSenderIdsFirst') || 'Please configure sender IDs first'}
+        </div>
+      )}
+    </div>
   );
-}
+};

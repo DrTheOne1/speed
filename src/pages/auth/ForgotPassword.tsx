@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '../../contexts/TranslationContext';
 import { toast } from 'react-hot-toast';
 
 export default function ForgotPassword() {
