@@ -6,7 +6,9 @@
     "submit": "Sign In",
     "remember": "Remember me",
     "forgot": "Forgot password?",
-    "register": "Don't have an account? Register"
+    "register": "Don't have an account? Register",
+    "success": "Successfully signed in",
+    "loading": "Signing in..."
   },
   "send": {
     "title": "Send Message",
@@ -170,7 +172,7 @@
     "sendSMS": "Send SMS",
     "sendGroupMessages": "Send Group Messages",
     "bulkSend": "Bulk Send",
-    "scheduled": "Scheduled",
+    "scheduled": "Scheduled Messages",
     "messages": "Messages",
     "campaigns": "Campaigns",
     "contacts": "Contacts",
@@ -179,7 +181,7 @@
     "billing": "Billing",
     "settings": "Settings",
     "help": "Help & Support",
-    "logout": "Log Out",
+    "logout": "Logout",
     "allContacts": "All Contacts",
     "groups": "Groups",
     "import": "Import",
@@ -192,7 +194,8 @@
     "gatewayLogs": "Gateway Logs",
     "testSMS": "Test SMS",
     "paymentMethods": "Payment Methods",
-    "subscriptionPlans": "Subscription Plans"
+    "subscriptionPlans": "Subscription Plans",
+    "closeSidebar": "Close sidebar"
   },
   "scheduled": {
     "title": "Scheduled Messages",

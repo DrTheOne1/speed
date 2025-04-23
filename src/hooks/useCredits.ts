@@ -20,12 +20,10 @@ export function useCredits() {
 
   const fetchCredits = async () => {
     if (!userId) {
-      console.log('No userId available, skipping credit fetch');
       return;
     }
     
     try {
-      console.log('Fetching credits for user:', userId);
       const { data, error } = await supabase
         .from('users')
         .select('credits')
@@ -33,14 +31,10 @@ export function useCredits() {
         .single();
 
       if (error) {
-        console.error('Supabase error fetching credits:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
-        console.error('Error details:', error.details);
+        console.error('Error fetching credits:', error);
         throw error;
       }
       
-      console.log('Fetched credits data:', data);
       setCredits(data?.credits || 0);
     } catch (error) {
       console.error('Error fetching credits:', error);

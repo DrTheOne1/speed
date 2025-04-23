@@ -71,6 +71,7 @@ const Login: React.FC = () => {
                 <FormLabel htmlFor="email">{t('auth.email')}</FormLabel>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   value={email}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
@@ -82,6 +83,7 @@ const Login: React.FC = () => {
                 <FormLabel htmlFor="password">{t('auth.password')}</FormLabel>
                 <Input
                   id="password"
+                  name="password"
                   type="password"
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}

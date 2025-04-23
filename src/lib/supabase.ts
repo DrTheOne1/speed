@@ -5,10 +5,6 @@ import { Database } from '../types/supabase';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debug environment variables
-console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing');
-console.log('Supabase Key:', supabaseAnonKey ? 'Present' : 'Missing');
-
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing required Supabase environment variables. Please check your .env file.');
@@ -22,7 +18,7 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: true
     },
     db: {
       schema: 'public'
@@ -54,7 +50,6 @@ const testConnection = async () => {
   try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) throw sessionError;
-    console.log('Supabase client connection successful');
     return true;
   } catch (error) {
     console.error('Supabase connection test failed:', error);

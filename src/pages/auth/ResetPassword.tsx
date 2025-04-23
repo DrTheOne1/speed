@@ -71,6 +71,7 @@ export default function ResetPassword() {
                 <input
                   type="password"
                   id="password"
+                  name="password"
                   className="form-control"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -86,6 +87,7 @@ export default function ResetPassword() {
                 <input
                   type="password"
                   id="confirmPassword"
+                  name="confirmPassword"
                   className="form-control"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

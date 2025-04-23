@@ -376,6 +376,8 @@ export default function SendSMS() {
             render={({ field }) => (
               <select
                 {...field}
+                id="sender_id"
+                name="sender_id"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               >
                 <option value="">Select a sender ID</option>
@@ -403,6 +405,8 @@ export default function SendSMS() {
               render={({ field }) => (
                 <select
                   {...field}
+                  id="country_code"
+                  name="country_code"
                   className="w-20 rounded-l-md border-r-0 bg-gray-50 text-gray-500 sm:text-sm"
                 >
                   <option value="46">+46</option>
@@ -418,6 +422,7 @@ export default function SendSMS() {
                 <input
                   type="text"
                   id="recipient"
+                  name="recipient"
                   className="flex-1 rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   placeholder="Enter phone number in any format"
                   {...field}
@@ -444,6 +449,7 @@ export default function SendSMS() {
               <div>
                 <textarea
                   id="message"
+                  name="message"
                   {...field}
                   rows={4}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"

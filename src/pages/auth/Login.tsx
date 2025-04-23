@@ -13,6 +13,8 @@ const InputField = ({ type, value, onChange, placeholder, error }: any) => (
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        id={placeholder.toLowerCase().replace(/\s+/g, '_')}
+        name={placeholder.toLowerCase().replace(/\s+/g, '_')}
         className={`block w-full rounded-md border ${
           error ? 'border-red-500' : 'border-gray-300'
         } px-3 py-2 bg-white relative z-10`} /* Added relative and z-10 */
@@ -213,39 +215,49 @@ export default function Login() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="relative z-30"> {/* Added z-30 for proper stacking */}
-              <InputField
-                type="email"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                placeholder={t('login.email')}
-                error={
-                  email && !email.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/)
-                    ? t('login.invalidEmail')
-                    : error
-                }
-              />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                {t('login.email')}
+              </label>
+              <div className="mt-1">
+                <InputField
+                  type="email"
+                  value={email}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  error={error}
+                  id="email"
+                  name="email"
+                />
+              </div>
             </div>
 
-            <div className="relative">
-              <InputField
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                placeholder={t('login.password')}
-                error={error}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 z-20"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                )}
-              </button>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                {t('login.password')}
+              </label>
+              <div className="mt-1 relative">
+                <InputField
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  error={error}
+                  id="password"
+                  name="password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 z-20"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">

@@ -6,6 +6,8 @@ interface PhoneInputProps {
   onChange: (value: string) => void;
   className?: string;
   error?: string;
+  id?: string;
+  name?: string;
 }
 
 // Comprehensive list of countries with dialing codes
@@ -206,7 +208,7 @@ const countries = [
   { code: 'ZW', name: 'Zimbabwe', dial: '+263' },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
-export default function PhoneInput({ value, onChange, className = '', error }: PhoneInputProps) {
+export default function PhoneInput({ value, onChange, className = '', error, id, name }: PhoneInputProps) {
   const [selectedCountry, setSelectedCountry] = useState(() => {
     const savedCountry = localStorage.getItem('lastSelectedCountry');
     return savedCountry || 'US';
@@ -326,13 +328,15 @@ export default function PhoneInput({ value, onChange, className = '', error }: P
   }, []);
 
   return (
-    <div className="relative phone-input-container">
-      <div className="input-group">
+    <div className={`relative ${className}`}>
+      <div className="flex">
         <select
           ref={selectRef}
           value={selectedCountry}
           onChange={(e) => handleCountryChange(e.target.value)}
-          className="rounded-l-md border-r-0 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className="rounded-l-md border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm"
+          id={id ? `${id}-country` : undefined}
+          name={name ? `${name}-country` : undefined}
         >
           {countries.map((country) => (
             <option key={country.code} value={country.code}>
@@ -344,13 +348,13 @@ export default function PhoneInput({ value, onChange, className = '', error }: P
           type="tel"
           value={localNumber}
           onChange={handleNumberChange}
-          className={`block w-full rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${className}`}
-          placeholder="Phone number"
+          className="flex-1 rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          placeholder="Enter phone number"
+          id={id}
+          name={name}
         />
       </div>
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

@@ -100,6 +100,7 @@ export default function Contacts() {
             <input
               type="text"
               id="name"
+              name="name"
               value={newContact.name}
               onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -111,6 +112,8 @@ export default function Contacts() {
               {t('contacts.form.phone')}
             </label>
             <PhoneInput
+              id="phone"
+              name="phone"
               value={newContact.phone_number}
               onChange={(value) => setNewContact({ ...newContact, phone_number: value })}
             />

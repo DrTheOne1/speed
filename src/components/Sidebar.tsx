@@ -58,6 +58,7 @@ export default function Sidebar({ isAdmin, sidebarOpen, setSidebarOpen }: Sideba
               isRTL ? 'mr-auto' : 'ml-auto'
             )}
             onClick={() => setSidebarOpen(false)}
+            aria-label={t('navigation.closeSidebar')}
           >
             <X className="h-6 w-6" />
           </button>

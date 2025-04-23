@@ -8,6 +8,7 @@ import Sidebar from './Sidebar';
 import LanguageSelector from './LanguageSelector';
 import { useTranslation } from '../contexts/TranslationContext';
 import { classNames } from '../utils/classNames';
+import { SessionTimeout } from './SessionTimeout';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -58,6 +59,7 @@ export default function Layout() {
       "min-h-screen bg-gray-100",
       isRTL ? "rtl" : "ltr"
     )}>
+      <SessionTimeout />
       <Sidebar
         isAdmin={isAdmin}
         sidebarOpen={sidebarOpen}

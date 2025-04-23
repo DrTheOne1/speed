@@ -305,41 +305,37 @@ export default function Register() {
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <div className="relative">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Name
+              </label>
+              <div className="mt-1">
                 <input
-                  type="text"
                   id="name"
+                  name="name"
+                  type="text"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
-                <label
-                  htmlFor="name"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
-                >
-                  Full Name
-                </label>
               </div>
             </div>
 
             <div>
-              <div className="relative">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email
+              </label>
+              <div className="mt-1">
                 <input
-                  type="email"
                   id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Email address"
                 />
-                <label
-                  htmlFor="email"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-2.5 peer-focus:text-gray-700"
-                >
-                  Email address
-                </label>
               </div>
             </div>
 
@@ -430,22 +426,20 @@ export default function Register() {
             </div>
 
             <div>
-              {/* Password Input */}
-              <div className="relative">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1">
                 <input
-                  type="password"
                   id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
-                <label
-                  htmlFor="password"
-                  className="absolute left-0 -top-2.5 px-2 bg-white text-gray-700 text-sm transition-all"
-                >
-                  Password
-                </label>
               </div>
             </div>
 

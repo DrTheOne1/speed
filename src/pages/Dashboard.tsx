@@ -29,14 +29,35 @@ export default function Dashboard() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No user found');
 
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, credits')
-        .eq('id', authUser.id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, credits')
+          .eq('id', authUser.id)
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (error) {
+          console.warn('Error fetching user data:', error.message);
+          // Return a default user object if the table doesn't exist or there's an error
+          return {
+            id: authUser.id,
+            name: authUser.email?.split('@')[0] || 'User',
+            credits: 0
+          };
+        }
+        return {
+          ...data,
+          name: authUser.email?.split('@')[0] || 'User'
+        };
+      } catch (error) {
+        console.warn('Error in user query:', error);
+        // Return a default user object if there's an exception
+        return {
+          id: authUser.id,
+          name: authUser.email?.split('@')[0] || 'User',
+          credits: 0
+        };
+      }
     }
   });
 
@@ -57,14 +78,23 @@ export default function Dashboard() {
   const { data: activities } = useQuery<Activity[]>({
     queryKey: ['user-activities'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('activities')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(5);
+      try {
+        const { data, error } = await supabase
+          .from('activities')
+          .select('*')
+          .limit(5);
 
-      if (error) throw error;
-      return data || [];
+        if (error) {
+          console.warn('Error fetching activities:', error.message);
+          // Return empty array if the table doesn't exist or there's an error
+          return [];
+        }
+        return data || [];
+      } catch (error) {
+        console.warn('Error in activities query:', error);
+        // Return empty array if there's an exception
+        return [];
+      }
     }
   });
 

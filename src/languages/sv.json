@@ -6,7 +6,9 @@
     "submit": "Logga in",
     "remember": "Kom ihåg mig",
     "forgot": "Glömt lösenord?",
-    "register": "Har du inget konto? Registrera dig"
+    "register": "Har du inget konto? Registrera dig",
+    "success": "Inloggningen lyckades",
+    "loading": "Loggar in..."
   },
   "send": {
     "title": "Skicka SMS",
@@ -184,7 +186,7 @@
     }
   },
   "navigation": {
-    "dashboard": "Instrumentpanel",
+    "dashboard": "Dashboard",
     "sendSMS": "Skicka SMS",
     "campaigns": "Kampanjer",
     "contacts": "Kontakter",
@@ -196,21 +198,23 @@
     "logout": "Logga ut",
     "messaging": "Meddelanden",
     "bulkSend": "Massutskick",
-    "scheduled": "Schemalagda",
+    "scheduled": "Schemalagda meddelanden",
     "messages": "Meddelanden",
     "allContacts": "Alla kontakter",
     "groups": "Grupper",
     "import": "Importera",
     "reports": "Rapporter",
     "usage": "Användning",
-    "adminDashboard": "Adminpanel",
+    "adminDashboard": "Admin Dashboard",
     "userManagement": "Användarhantering",
     "gatewayManagement": "Gateway-hantering",
     "gatewayRoutes": "Gateway-rutter",
     "gatewayLogs": "Gateway-loggar",
     "testSMS": "Testa SMS",
     "paymentMethods": "Betalningsmetoder",
-    "subscriptionPlans": "Prenumerationsplaner"
+    "subscriptionPlans": "Prenumerationsplaner",
+    "sendGroupMessages": "Skicka gruppmeddelanden",
+    "closeSidebar": "Stäng sidofält"
   },
   "bulkSend": {
     "title": "Massutskick av SMS",

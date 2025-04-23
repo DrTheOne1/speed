@@ -6,7 +6,9 @@
     "submit": "دخول",
     "remember": "تذكرني",
     "forgot": "نسيت كلمة المرور؟",
-    "register": "ليس لديك حساب؟ سجل الآن"
+    "register": "ليس لديك حساب؟ سجل الآن",
+    "success": "تم تسجيل الدخول بنجاح",
+    "loading": "جاري تسجيل الدخول..."
   },
   "send": {
     "title": "إرسال رسالة",
@@ -175,7 +177,8 @@
     "testSMS": "اختبار الرسائل",
     "paymentMethods": "طرق الدفع",
     "subscriptionPlans": "خطط الاشتراك",
-    "sendGroupMessages": "إرسال رسائل للمجموعات"
+    "sendGroupMessages": "إرسال رسائل للمجموعات",
+    "closeSidebar": "إغلاق الشريط الجانبي"
   },
   "bulkSend": {
     "title": "إرسال رسائل جماعي",

@@ -14,13 +14,6 @@ interface TranslationContextType {
   direction: 'ltr' | 'rtl';
 }
 
-// Debug: Log the imported translations
-console.log('Imported translations:', {
-  en: enTranslations,
-  sv: svTranslations,
-  ar: arTranslations
-});
-
 const translations = {
   en: enTranslations,
   sv: svTranslations,
@@ -33,7 +26,6 @@ export const TranslationProvider = ({ children }: { children: React.ReactNode })
   const [language, setLanguageState] = useState<Language>('en');
 
   const setLanguage = (lang: Language) => {
-    console.log('Language changed to:', lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('language', lang);
     }

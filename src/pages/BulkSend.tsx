@@ -111,6 +111,7 @@ export default function BulkSend() {
                     onChange={handleFileChange}
                     className="hidden"
                     id="file-upload"
+                    name="file-upload"
                   />
                   <label htmlFor="file-upload" className="cursor-pointer">
                     <div className="flex flex-col items-center">

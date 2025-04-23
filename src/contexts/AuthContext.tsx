@@ -10,12 +10,13 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<void>;
   getSessionToken: () => Promise<string | null>;
   signInWithGoogle: () => Promise<any>;
   signInWithGithub: () => Promise<any>;
-  resetPassword: (email: string, captchaToken: string) => Promise<void>;
+  resetPassword: (email: string, captchaToken?: string) => Promise<void>;
   refreshUserData: () => Promise<void>;
 }
 
@@ -35,14 +36,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserData = async (id: string) => {
     try {
+      // First try to get the user profile
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, role, credits, created_at, gateway_id, sender_names')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If the error is that no rows were found, create a profile for the user
+        if (error.code === 'PGRST116') {
+          console.log('No profile found, creating one for user:', id);
+          
+          // Get the user's email from the current session instead of admin API
+          const { data: { session } } = await supabase.auth.getSession();
+          const email = session?.user?.email;
+          
+          if (!email) {
+            console.error('Could not get user email from session');
+            throw new Error('Could not get user email from session');
+          }
+          
+          // Create a new profile for the user
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              { 
+                id, 
+                email, 
+                role: 'user', 
+                credits: 0,
+                created_at: new Date().toISOString()
+              }
+            ])
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            throw createError;
+          }
+          
+          // Set the user data with the newly created profile
+          setUserData(newProfile);
+          setCredits(newProfile?.credits || 0);
+          return;
+        }
+        
+        // For other errors, throw them
+        throw error;
+      }
       
+      // If we got here, we have a valid profile
       setUserData(data);
       setCredits(data?.credits || 0);
     } catch (error) {
@@ -97,7 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     checkSession();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -153,13 +200,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, metadata?: any) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: metadata?.data || {}
+        }
       });
+      
       if (error) throw error;
+      
+      if (data.user) {
+        setUser(data.user);
+        setUserId(data.user.id);
+        await fetchUserData(data.user.id);
+      }
     } catch (error) {
       console.error('Error signing up:', error);
       throw error;
@@ -198,35 +255,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const resetPassword = async (email: string, captchaToken: string) => {
+  const resetPassword = async (email: string, captchaToken?: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        captchaToken,
-        redirectTo: 'https://sms-speed.netlify.app/reset-password'
+        redirectTo: `${window.location.origin}/reset-password`,
+        captchaToken
       });
+      
       if (error) throw error;
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
     }
   };
 
+  // Add login as an alias for signIn
+  const login = signIn;
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userId,
-      userData,
-      credits,
-      session, 
-      loading, 
-      signIn, 
-      signOut, 
-      signUp, 
-      getSessionToken, 
-      signInWithGoogle, 
-      signInWithGithub, 
-      resetPassword,
-      refreshUserData
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userId,
+        userData,
+        credits,
+        session,
+        loading,
+        signIn,
+        login,
+        signOut,
+        signUp,
+        getSessionToken,
+        signInWithGoogle,
+        signInWithGithub,
+        resetPassword,
+        refreshUserData,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
