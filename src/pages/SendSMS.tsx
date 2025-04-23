@@ -7,7 +7,7 @@ import { Send, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { calculateMessageSegments, calculateRequiredCredits, getMessageDetails, isGsm7Message } from '../utils/smsUtils';
-import { useTranslation } from '../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 import SMSCharacterCounter from '../components/SMSCharacterCounter';
 
 const testSMSSchema = z.object({

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from '../contexts/TranslationContext';
-import { Activity, CreditCard, Send, Users, FileText, Bell } from 'lucide-react';
+import { Activity, CreditCard, Send, Users, FileText, Bell, Wallet } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
 
 interface UserStats {
@@ -86,17 +86,20 @@ export default function Dashboard() {
           <h3 className="text-lg font-medium mb-2">{t('dashboard.credits.title')}</h3>
           <div className="flex items-center justify-between">
             {creditsLoading ? (
-              <div className="animate-pulse h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="flex items-center">
+                <div className="animate-pulse h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded mr-2"></div>
+                <div className="animate-pulse h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
             ) : (
-              <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                {credits}
-              </span>
+              <div className="flex items-center">
+                <Wallet className={`h-8 w-8 mr-2 ${credits <= 51 ? 'text-red-500' : 'text-green-500'}`} />
+                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {credits}
+                </span>
+              </div>
             )}
-            <p className="text-gray-600">
-              {t('dashboard.credits.remaining', { count: credits })}
-            </p>
           </div>
-          {credits <= 50 && (
+          {!creditsLoading && credits <= 50 && (
             <p className="text-amber-600 mt-2">{t('dashboard.credits.low')}</p>
           )}
         </div>
@@ -105,9 +108,9 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium mb-4">{t('dashboard.stats.title')}</h3>
           <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t('dashboard.stats.sent')}</span>
-              <span className="font-semibold">{stats?.messagesSent || 0}</span>
+            <div className="stat">
+              <div className="stat-title">{t('dashboard.stats.sent')}</div>
+              <div className="stat-value">{stats?.messagesSent || '0'}</div>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">{t('dashboard.stats.delivered')}</span>

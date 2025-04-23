@@ -1,14 +1,16 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { TranslationProvider } from './contexts/TranslationContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import UserRoute from './components/UserRoute';
 import AdminCMS from './pages/admin/AdminCMS';
+
 // User pages
 import Dashboard from './pages/Dashboard';
 import SendSMS from './pages/SendSMS';
@@ -43,60 +45,161 @@ import AdminMessages from './pages/admin/Messages';
 
 const queryClient = new QueryClient();
 
+const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <Login />
+  },
+  {
+    path: "/register",
+    element: <Register />
+  },
+  {
+    path: "/activation-success",
+    element: <ActivationSuccess />
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <Layout />,
+        children: [
+          {
+            element: <AdminRoute />,
+            children: [
+              {
+                path: "/admin",
+                element: <AdminDashboard />
+              },
+              {
+                path: "/admin/users",
+                element: <UserManagement />
+              },
+              {
+                path: "/admin/gateways",
+                element: <GatewayManagement />
+              },
+              {
+                path: "/admin/gateway-routes",
+                element: <GatewayRoutes />
+              },
+              {
+                path: "/admin/gateway-logs",
+                element: <GatewayLogs />
+              },
+              {
+                path: "/admin/test-sms",
+                element: <TestSMS />
+              },
+              {
+                path: "/admin/payment-methods",
+                element: <PaymentMethods />
+              },
+              {
+                path: "/admin/subscription-plans",
+                element: <SubscriptionPlans />
+              },
+              {
+                path: "/admin/messages",
+                element: <AdminMessages />
+              },
+              {
+                path: "/admin/cms",
+                element: <AdminCMS />
+              }
+            ]
+          },
+          {
+            element: <UserRoute />,
+            children: [
+              {
+                path: "/",
+                element: <Dashboard />
+              },
+              {
+                path: "/send",
+                element: <SendSMS />
+              },
+              {
+                path: "/send-group-messages",
+                element: <SendGroupMessages />
+              },
+              {
+                path: "/bulk-send",
+                element: <BulkSend />
+              },
+              {
+                path: "/contacts",
+                element: <Contacts />
+              },
+              {
+                path: "/groups",
+                element: <Groups />
+              },
+              {
+                path: "/import-contacts",
+                element: <ImportContactsPage />
+              },
+              {
+                path: "/templates",
+                element: <Templates />
+              },
+              {
+                path: "/scheduled",
+                element: <Scheduled />
+              },
+              {
+                path: "/history",
+                element: <History />
+              },
+              {
+                path: "/analytics",
+                element: <Analytics />
+              },
+              {
+                path: "/usage",
+                element: <Usage />
+              },
+              {
+                path: "/billing",
+                element: <Billing />
+              },
+              {
+                path: "/settings",
+                element: <Settings />
+              },
+              {
+                path: "/messages",
+                element: <Messages />
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+], {
+  future: {
+    v7_relativeSplatPath: true
+  }
+});
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TranslationProvider>
+    <TranslationProvider>
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/activation-success" element={<ActivationSuccess />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              
-              <Route element={<ProtectedRoute />}>
-                <Route element={<Layout />}>
-                  {/* Admin routes */}
-                  <Route element={<AdminRoute />}>
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/users" element={<UserManagement />} />
-                    <Route path="/admin/gateways" element={<GatewayManagement />} />
-                    <Route path="/admin/gateway-routes" element={<GatewayRoutes />} />
-                    <Route path="/admin/gateway-logs" element={<GatewayLogs />} />
-                    <Route path="/admin/test-sms" element={<TestSMS />} />
-                    <Route path="/admin/payment-methods" element={<PaymentMethods />} />
-                    <Route path="/admin/subscription-plans" element={<SubscriptionPlans />} />
-                    <Route path="/admin/messages" element={<AdminMessages />} />
-                    <Route path="/admin/cms" element={<AdminCMS />} />
-                  </Route>
-
-                  {/* User routes */}
-                  <Route element={<UserRoute />}>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/send" element={<SendSMS />} />
-                    <Route path="/send-group-messages" element={<SendGroupMessages />} />
-                    <Route path="/bulk-send" element={<BulkSend />} />
-                    <Route path="/contacts" element={<Contacts />} />
-                    <Route path="/groups" element={<Groups />} />
-                    <Route path="/import-contacts" element={<ImportContactsPage />} />
-                    <Route path="/templates" element={<Templates />} />
-                    <Route path="/scheduled" element={<Scheduled />} />
-                    <Route path="/history" element={<History />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/usage" element={<Usage />} />
-                    <Route path="/billing" element={<Billing />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/messages" element={<Messages />} />
-                  </Route>
-                </Route>
-              </Route>
-            </Routes>
-          </Router>
-          <Toaster position="top-right" />
+          <LanguageProvider>
+            <RouterProvider router={router} />
+            <Toaster position="top-right" />
+          </LanguageProvider>
         </AuthProvider>
-      </TranslationProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </TranslationProvider>
   );
 }
 

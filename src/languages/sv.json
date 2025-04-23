@@ -5,7 +5,8 @@
     "password": "Lösenord",
     "submit": "Logga in",
     "remember": "Kom ihåg mig",
-    "forgot": "Glömt lösenord?"
+    "forgot": "Glömt lösenord?",
+    "register": "Har du inget konto? Registrera dig"
   },
   "send": {
     "title": "Skicka SMS",
@@ -57,18 +58,19 @@
     "recipientPlaceholder": "Ange telefonnummer",
     "messageLabel": "Meddelande",
     "messagePlaceholder": "Skriv ditt meddelande här",
-    "charactersRemaining": "{{count}} tecken återstår",
-    "messageWillBeSplit": "Meddelandet kommer att delas upp i {{count}} SMS",
+    "charactersRemaining": "{{count}} tecken kvar (153 tecken per sida för flerdelade meddelanden)",
+    "messageWillBeSplit": "Meddelandet kommer att delas upp i {{count}} delar",
+    "messagePoints": "{{points}} poäng",
     "sendButton": "Skicka meddelande",
     "sendingButton": "Skickar...",
     "selectContacts": "Välj från kontakter",
-    "scheduleSend": "Schemalägg",
-    "now": "Nu",
-    "schedule": "Schemalägg",
+    "scheduleSend": "Schemalägg sändning",
+    "templatesTitle": "Meddelandemallar",
+    "scheduleNow": "Skicka nu",
+    "scheduleLater": "Schemalägg för senare",
     "scheduledFor": "Schemalagd för",
     "templates": "Mallar",
     "useTemplate": "Använd mall",
-    "templatesTitle": "Mallar",
     "success": "Meddelandet har skickats",
     "error": "Det gick inte att skicka meddelandet",
     "validation": {
@@ -85,55 +87,11 @@
       "cancel": "Avbryt"
     }
   },
-  "bulkSend": {
-    "title": "Massutskick",
-    "description": "Skicka meddelanden till flera mottagare",
-    "uploadSection": {
-      "title": "Ladda upp mottagare",
-      "description": "Ladda upp en CSV-fil eller klistra in nummer",
-      "dragDrop": "Dra och släpp CSV-fil här eller",
-      "browse": "Bläddra bland filer",
-      "paste": "Klistra in nummer",
-      "template": "Ladda ner mall"
-    },
-    "messageSection": {
-      "title": "Meddelandeinnehåll",
-      "placeholder": "Skriv ditt meddelande här",
-      "variables": "Tillgängliga variabler",
-      "preview": "Förhandsgranska meddelande"
-    },
-    "recipientCount": "{{count}} mottagare",
-    "estimatedCost": "Uppskattad kostnad: {{credits}} krediter",
-    "schedule": {
-      "title": "Schemalägg leverans",
-      "now": "Skicka nu",
-      "later": "Schemalägg för senare",
-      "datetime": "Välj datum och tid"
-    },
-    "submit": "Skicka meddelanden",
-    "sending": "Skickar...",
-    "validation": {
-      "messageRequired": "Meddelande krävs",
-      "messageLength": "Meddelandet måste vara kortare än 160 tecken",
-      "fileRequired": "Välj en CSV-fil",
-      "invalidFormat": "Ogiltigt filformat. Använd CSV",
-      "invalidPhone": "Ogiltigt telefonnummerformat"
-    },
-    "success": {
-      "scheduled": "Meddelanden schemalagda!",
-      "uploaded": "Fil uppladdad"
-    },
-    "error": {
-      "generic": "Det gick inte att skicka meddelanden. Försök igen.",
-      "upload": "Det gick inte att ladda upp filen",
-      "processing": "Fel vid filbearbetning"
-    }
-  },
   "billing": {
     "title": "Fakturering & Abonnemang",
-    "description": "Välj en plan som passar dina behov",
+    "description": "Välj det abonnemang som passar dina behov",
     "usage": {
-      "title": "Aktuell användning",
+      "title": "Nuvarande användning",
       "description": "Övervaka ditt nuvarande abonnemang och kreditanvändning"
     },
     "currentPlan": "Nuvarande abonnemang",
@@ -150,15 +108,15 @@
       "status": "Status"
     },
     "payment": {
-      "redirecting": "Omdirigerar till betalning...",
-      "failed": "Betalningen misslyckades"
+      "redirecting": "Omdirigerar till betalningssidan...",
+      "failed": "Betalning misslyckades"
     },
     "features": {
       "unlimited_messages": "Obegränsade meddelanden",
       "api_access": "API-åtkomst",
-      "priority_support": "Prioriterad support",
+      "priority_support": "Prioriterat stöd",
       "detailed_analytics": "Detaljerad analys",
-      "custom_sender": "Anpassat avsändar-ID",
+      "custom_sender": "Anpassat avsändarnamn",
       "scheduled_messages": "Schemalagda meddelanden",
       "bulk_sending": "Massutskick",
       "delivery_reports": "Leveransrapporter",
@@ -166,9 +124,12 @@
       "contact_groups": "Kontaktgrupper"
     },
     "billing_cycle": {
-      "monthly": "per månad",
-      "yearly": "per år",
-      "quarterly": "per kvartal"
+      "monthly": "Månadsvis",
+      "yearly": "Årsvis",
+      "quarterly": "Kvartalsvis"
+    },
+    "errors": {
+      "loadingFailed": "Kunde inte ladda abonnemang"
     }
   },
   "subscription_plans": {
@@ -186,35 +147,40 @@
     }
   },
   "dashboard": {
-    "title": "Kontrollpanel",
+    "title": "Instrumentpanel",
     "welcome": "Välkommen tillbaka, {{name}}",
-    "summary": "Kontoöversikt",
+    "summary": "Kontöversikt",
+    "stats": {
+      "title": "Statistik",
+      "messages": "Meddelanden",
+      "contacts": "Kontakter",
+      "credits": "Krediter",
+      "sent": "Skickade meddelanden",
+      "delivered": "Levererade meddelanden",
+      "failed": "Kunde inte ladda statistik"
+    },
     "credits": {
       "title": "Tillgängliga krediter",
       "remaining": "{{count}} krediter återstår",
-      "low": "Dina krediter börjar ta slut"
-    },
-    "activity": {
-      "title": "Senaste aktivitet",
-      "empty": "Ingen nylig aktivitet",
-      "seeAll": "Se all aktivitet"
-    },
-    "stats": {
-      "title": "Prestanda",
-      "sent": "Skickade meddelanden",
-      "delivered": "Leveransfrekvens",
-      "failed": "Misslyckade"
+      "low": "Dina krediter börjar ta slut",
+      "available": "Tillgängliga krediter",
+      "loading": "Laddar krediter..."
     },
     "quickActions": {
       "title": "Snabbåtgärder",
       "send": "Skicka meddelande",
-      "contacts": "Hantera kontakter",
-      "templates": "SMS-mallar",
-      "billing": "Fakturering & prenumeration"
+      "contacts": "Kontakter",
+      "templates": "Mallar",
+      "billing": "Fakturering"
+    },
+    "activity": {
+      "title": "Senaste aktivitet",
+      "seeAll": "Se alla",
+      "empty": "Ingen ny aktivitet"
     },
     "alerts": {
-      "title": "Notiser",
-      "empty": "Inga nya notiser"
+      "title": "Aviseringar",
+      "empty": "Inga aviseringar"
     }
   },
   "navigation": {
@@ -227,37 +193,442 @@
     "billing": "Fakturering",
     "settings": "Inställningar",
     "help": "Hjälp & Support",
-    "logout": "Logga ut"
+    "logout": "Logga ut",
+    "messaging": "Meddelanden",
+    "bulkSend": "Massutskick",
+    "scheduled": "Schemalagda",
+    "messages": "Meddelanden",
+    "allContacts": "Alla kontakter",
+    "groups": "Grupper",
+    "import": "Importera",
+    "reports": "Rapporter",
+    "usage": "Användning",
+    "adminDashboard": "Adminpanel",
+    "userManagement": "Användarhantering",
+    "gatewayManagement": "Gateway-hantering",
+    "gatewayRoutes": "Gateway-rutter",
+    "gatewayLogs": "Gateway-loggar",
+    "testSMS": "Testa SMS",
+    "paymentMethods": "Betalningsmetoder",
+    "subscriptionPlans": "Prenumerationsplaner"
+  },
+  "bulkSend": {
+    "title": "Massutskick av SMS",
+    "description": "Skicka SMS-meddelanden till flera mottagare",
+    "uploadSection": {
+      "title": "Ladda upp mottagare",
+      "description": "Ladda upp en CSV-fil med telefonnummer",
+      "dragDrop": "Dra och släpp din CSV-fil här, eller",
+      "browse": "bläddra",
+      "paste": "Klistra in nummer",
+      "template": "Ladda ner mall"
+    },
+    "messageSection": {
+      "title": "Meddelande",
+      "placeholder": "Skriv ditt meddelande här",
+      "variables": "Infoga variabler",
+      "preview": "Förhandsgranska meddelande"
+    },
+    "schedule": {
+      "title": "Schemalägg",
+      "now": "Skicka nu",
+      "later": "Schemalägg för senare"
+    },
+    "templates": {
+      "title": "Mallar",
+      "download": "Ladda ner mall"
+    },
+    "validation": {
+      "messageRequired": "Meddelande krävs",
+      "messageLength": "Meddelandet måste vara mindre än 160 tecken",
+      "fileRequired": "Välj en CSV-fil",
+      "invalidFormat": "Ogiltigt filformat. Använd CSV"
+    },
+    "success": {
+      "scheduled": "Meddelanden har schemalagts"
+    },
+    "error": {
+      "generic": "Det gick inte att skicka meddelanden. Försök igen.",
+      "fileRequired": "Välj en CSV-fil",
+      "invalidFormat": "Ogiltigt filformat. Använd CSV"
+    },
+    "sending": "Skickar...",
+    "submit": "Skicka meddelanden"
+  },
+  "scheduled": {
+    "title": "Schemalagda meddelanden",
+    "description": "Visa och hantera dina schemalagda meddelanden",
+    "listSection": {
+      "title": "Schemalagda meddelanden",
+      "description": "Visa och hantera dina schemalagda meddelanden",
+      "empty": "Inga schemalagda meddelanden",
+      "table": {
+        "recipient": "Mottagare",
+        "message": "Meddelande",
+        "scheduledFor": "Schemalagd för",
+        "status": "Status",
+        "actions": "Åtgärder"
+      }
+    },
+    "messageSection": {
+      "title": "Meddelandedetaljer",
+      "recipient": "Mottagare",
+      "message": "Meddelande",
+      "schedule": "Schema",
+      "status": "Status"
+    },
+    "schedule": {
+      "title": "Schema",
+      "now": "Skicka nu",
+      "later": "Schemalägg för senare",
+      "date": "Välj datum",
+      "time": "Välj tid"
+    },
+    "status": {
+      "scheduled": "Schemalagd",
+      "sent": "Skickad",
+      "failed": "Misslyckad",
+      "cancelled": "Avbruten"
+    },
+    "actions": {
+      "cancel": "Avbryt",
+      "reschedule": "Schemalägg om",
+      "view": "Visa detaljer",
+      "edit": "Redigera meddelande"
+    },
+    "validation": {
+      "dateRequired": "Datum krävs",
+      "timeRequired": "Tid krävs",
+      "messageRequired": "Meddelande krävs",
+      "recipientRequired": "Mottagare krävs"
+    },
+    "success": {
+      "scheduled": "Meddelandet har schemalagts",
+      "cancelled": "Meddelandet har avbrutits",
+      "rescheduled": "Meddelandet har omplanerats"
+    },
+    "error": {
+      "generic": "Det gick inte att bearbeta meddelandet. Försök igen.",
+      "cancel": "Det gick inte att avbryta meddelandet",
+      "reschedule": "Det gick inte att omplanera meddelandet"
+    },
+    "filters": {
+      "title": "Filtrera meddelanden",
+      "all": "Alla meddelanden",
+      "upcoming": "Kommande",
+      "past": "Tidigare",
+      "status": "Filtrera efter status"
+    },
+    "search": {
+      "placeholder": "Sök efter mottagare eller meddelande"
+    }
   },
   "messages": {
-    "title": "Meddelanden",
-    "inbox": "Inkorg",
-    "sent": "Skickat",
-    "scheduled": "Schemalagt",
-    "draft": "Utkast",
-    "search": "Sök meddelanden",
-    "noMessages": "Inga meddelanden hittades",
-    "loadingMessages": "Laddar meddelanden...",
-    "filter": "Filtrera meddelanden",
-    "sortBy": "Sortera efter",
-    "date": "Datum",
-    "status": "Status",
-    "recipient": "Mottagare",
-    "actions": "Åtgärder",
-    "view": "Visa",
-    "delete": "Ta bort",
-    "resend": "Skicka igen",
-    "messageDetails": "Meddelandedetaljer",
-    "deliveryStatus": {
-      "delivered": "Levererad",
-      "sent": "Skickat",
-      "failed": "Misslyckades",
-      "pending": "Väntar",
-      "scheduled": "Schemalagt"
+    "title": "Meddelandehistorik",
+    "description": "Visa din meddelandehistorik och leveransstatus",
+    "listSection": {
+      "title": "Meddelanden",
+      "empty": "Inga meddelanden hittades",
+      "table": {
+        "recipient": "Mottagare",
+        "message": "Meddelande",
+        "sentAt": "Skickat",
+        "status": "Status",
+        "actions": "Åtgärder"
+      }
     },
-    "deleteConfirm": "Är du säker på att du vill ta bort detta meddelande?",
-    "messageSent": "Meddelande skickat den",
-    "messageScheduled": "Schemalagt till",
-    "viewAll": "Visa alla meddelanden"
+    "messageSection": {
+      "title": "Meddelandedetaljer",
+      "recipient": "Mottagare",
+      "message": "Meddelande",
+      "sentAt": "Skickat",
+      "status": "Status",
+      "close": "Stäng"
+    },
+    "status": {
+      "sent": "Skickat",
+      "delivered": "Levererat",
+      "failed": "Misslyckades",
+      "scheduled": "Schemalagt",
+      "cancelled": "Avbrutet"
+    },
+    "filters": {
+      "all": "Alla meddelanden",
+      "sent": "Skickade",
+      "delivered": "Levererade",
+      "failed": "Misslyckade",
+      "scheduled": "Schemalagda",
+      "cancelled": "Avbrutna"
+    },
+    "search": {
+      "placeholder": "Sök efter mottagare eller meddelande"
+    },
+    "actions": {
+      "view": "Visa",
+      "resend": "Skicka igen",
+      "cancel": "Avbryt"
+    },
+    "confirmation": {
+      "resend": {
+        "title": "Skicka meddelande igen",
+        "message": "Är du säker på att du vill skicka detta meddelande igen?",
+        "confirm": "Skicka igen",
+        "cancel": "Avbryt"
+      },
+      "cancel": {
+        "title": "Avbryt meddelande",
+        "message": "Är du säker på att du vill avbryta detta meddelande?",
+        "confirm": "Avbryt",
+        "cancel": "Behåll"
+      }
+    },
+    "export": {
+      "success": "Exporten slutfördes",
+      "error": "Kunde inte exportera meddelanden",
+      "button": "Exportera meddelanden"
+    },
+    "loading": "Laddar meddelanden...",
+    "error": "Kunde inte ladda meddelanden"
+  },
+  "contacts": {
+    "title": "Kontakter",
+    "description": "Hantera dina kontakter och kontaktgrupper",
+    "listSection": {
+      "title": "Kontakter",
+      "empty": "Inga kontakter hittades",
+      "table": {
+        "name": "Namn",
+        "phone": "Telefon",
+        "group": "Grupp",
+        "actions": "Åtgärder"
+      }
+    },
+    "form": {
+      "title": "Lägg till kontakt",
+      "editTitle": "Redigera kontakt",
+      "name": "Namn",
+      "phone": "Telefonnummer",
+      "group": "Grupp",
+      "save": "Spara kontakt",
+      "cancel": "Avbryt"
+    },
+    "groups": {
+      "title": "Kontaktgrupper",
+      "description": "Hantera dina kontaktgrupper för massutskick",
+      "empty": "Inga grupper hittades",
+      "add": "Lägg till grupp",
+      "edit": "Redigera grupp",
+      "delete": "Ta bort grupp",
+      "name": "Gruppnamn",
+      "description": "Beskrivning",
+      "members": "Medlemmar",
+      "memberCount": "{{count}} medlemmar",
+      "save": "Spara grupp",
+      "cancel": "Avbryt",
+      "success": {
+        "added": "Grupp tillagd",
+        "updated": "Grupp uppdaterad",
+        "deleted": "Grupp borttagen"
+      },
+      "error": {
+        "title": "Fel",
+        "add": "Kunde inte lägga till grupp",
+        "update": "Kunde inte uppdatera grupp",
+        "delete": "Kunde inte ta bort grupp"
+      }
+    },
+    "actions": {
+      "add": "Lägg till kontakt",
+      "edit": "Redigera",
+      "delete": "Ta bort",
+      "view": "Visa"
+    },
+    "validation": {
+      "nameRequired": "Namn krävs",
+      "phoneRequired": "Telefonnummer krävs",
+      "invalidPhone": "Ogiltigt telefonnummerformat",
+      "groupRequired": "Grupp krävs"
+    },
+    "confirmation": {
+      "delete": {
+        "title": "Ta bort kontakt",
+        "message": "Är du säker på att du vill ta bort denna kontakt?",
+        "confirm": "Ta bort",
+        "cancel": "Avbryt"
+      },
+      "deleteGroup": {
+        "title": "Ta bort grupp",
+        "message": "Är du säker på att du vill ta bort denna grupp? Alla kontakter i denna grupp kommer att flyttas till standardgruppen.",
+        "confirm": "Ta bort",
+        "cancel": "Avbryt"
+      }
+    },
+    "success": {
+      "added": "Kontakt tillagd",
+      "updated": "Kontakt uppdaterad",
+      "deleted": "Kontakt borttagen",
+      "groupAdded": "Grupp tillagd",
+      "groupUpdated": "Grupp uppdaterad",
+      "groupDeleted": "Grupp borttagen"
+    },
+    "error": {
+      "add": "Kunde inte lägga till kontakt",
+      "update": "Kunde inte uppdatera kontakt",
+      "delete": "Kunde inte ta bort kontakt",
+      "groupAdd": "Kunde inte lägga till grupp",
+      "groupUpdate": "Kunde inte uppdatera grupp",
+      "groupDelete": "Kunde inte ta bort grupp"
+    },
+    "import": {
+      "title": "Importera kontakter",
+      "description": "Importera kontakter från en CSV-fil eller ange telefonnummer manuellt",
+      "manual": {
+        "title": "Manuell import",
+        "description": "Ange telefonnummer direkt med eller utan landskod",
+        "country": "Landskod",
+        "group": "Tilldela till grupp",
+        "noGroup": "Ingen grupp",
+        "numbers": "Telefonnummer",
+        "placeholder": "Ange ett telefonnummer per rad\nExempel:\n0700506180\n+46700506180\n0046700506180",
+        "format": "Ange ett telefonnummer per rad. Nummer kan anges med eller utan landskod. Systemet kommer automatiskt att formatera dem korrekt.",
+        "count": "Antal kontakter att importera"
+      },
+      "template": {
+        "title": "Ladda ner mall",
+        "description": "Ladda ner vår CSV-mall för att säkerställa att din kontaktlista är korrekt formaterad",
+        "button": "Ladda ner mall"
+      },
+      "upload": {
+        "title": "Ladda upp kontakter",
+        "description": "Ladda upp din CSV-fil med kontakter",
+        "instructions": "Klicka för att ladda upp eller dra och släpp",
+        "fileType": "Endast CSV-filer",
+        "importing": "Importerar...",
+        "import": "Importera kontakter",
+        "success": "Kontakter importerades framgångsrikt!",
+        "error": "Kunde inte importera kontakter"
+      },
+      "error": {
+        "empty": "Vänligen ange minst ett telefonnummer",
+        "invalid": "Ogiltigt telefonnummerformat"
+      },
+      "progress": {
+        "uploaded": "{{filename}}",
+        "percentage": "{{percentage}}%"
+      }
+    }
+  },
+  "templates": {
+    "title": "Meddelandemallar",
+    "description": "Skapa och hantera dina meddelandemallar",
+    "add": {
+      "button": "Lägg till mall",
+      "title": "Mallnamn",
+      "content": "Meddelandeinnehåll",
+      "save": "Spara",
+      "cancel": "Avbryt",
+      "success": "Mallen har lagts till",
+      "error": "Kunde inte lägga till mall"
+    },
+    "table": {
+      "name": "Namn",
+      "content": "Innehåll",
+      "actions": "Åtgärder"
+    },
+    "delete": {
+      "success": "Mallen har tagits bort",
+      "error": "Kunde inte ta bort mall"
+    }
+  },
+  "settings": {
+    "title": "Inställningar",
+    "accountInfo": {
+      "title": "Kontoinformation",
+      "description": "Hantera dina kontoinställningar och preferenser",
+      "email": "E-postadress",
+      "credits": "Tillgängliga krediter"
+    },
+    "actions": {
+      "save": "Spara ändringar",
+      "saving": "Sparar..."
+    },
+    "messages": {
+      "updateError": "Det gick inte att uppdatera inställningarna"
+    }
+  },
+  "auth": {
+    "resetPassword": "Återställ lösenord",
+    "resetPasswordInstructions": "Ange din e-postadress så skickar vi instruktioner för att återställa ditt lösenord",
+    "email": "E-postadress",
+    "password": "Lösenord",
+    "confirmPassword": "Bekräfta lösenord",
+    "name": "Namn",
+    "phone": "Telefonnummer",
+    "sendResetInstructions": "Skicka återställningsinstruktioner",
+    "sending": "Skickar...",
+    "backToLogin": "Tillbaka till inloggning",
+    "createAccount": "Skapa konto",
+    "resetPasswordSuccess": "Instruktioner för att återställa lösenordet har skickats till din e-post",
+    "activationSuccess": "Ditt konto har aktiverats",
+    "activationError": "Kunde inte aktivera kontot",
+    "resendVerification": "Skicka verifieringslänk igen",
+    "resendVerificationSuccess": "Verifieringslänk har skickats",
+    "resendVerificationError": "Kunde inte skicka verifieringslänk",
+    "register": {
+      "title": "Skapa nytt konto",
+      "description": "Ange dina uppgifter för att skapa ett konto",
+      "submit": "Skapa konto",
+      "success": "Ditt konto har skapats! Kontrollera din e-post",
+      "error": "Kunde inte skapa konto",
+      "alreadyHaveAccount": "Har du redan ett konto?",
+      "signIn": "Logga in",
+      "validation": {
+        "nameRequired": "Namn krävs",
+        "emailRequired": "E-postadress krävs",
+        "emailInvalid": "Ogiltig e-postadress",
+        "passwordRequired": "Lösenord krävs",
+        "passwordMinLength": "Lösenordet måste vara minst 8 tecken",
+        "passwordMismatch": "Lösenorden matchar inte",
+        "phoneRequired": "Telefonnummer krävs",
+        "phoneInvalid": "Ogiltigt telefonnummer"
+      }
+    }
+  },
+  "sendGroupMessages": {
+    "senderLabel": "Välj avsändar-ID",
+    "title": "Skicka gruppmeddelanden",
+    "groupLabel": "Välj grupp",
+    "messageLabel": "Meddelande",
+    "messagePlaceholder": "Skriv ditt meddelande här...",
+    "charactersRemaining": "{{count}} tecken återstår",
+    "messageWillBeSplit": "Meddelandet delas upp i {{count}} delar",
+    "messagePoints": "{{points}} krediter",
+    "scheduleNow": "Skicka nu",
+    "scheduleLater": "Schemalägga för senare",
+    "scheduledFor": "Schemalagd för",
+    "sendButton": "Skicka meddelande",
+    "noSendersAvailable": "Inga avsändar-ID tillgängliga",
+    "configureSenderIdsFirst": "Konfigurera avsändar-ID i dina kontoinställningar först",
+    "members": "kontakter",
+    "selectGroup": "Välj en grupp",
+    "groupInfo": "Gruppinformation",
+    "groupName": "Gruppnamn",
+    "groupDescription": "Beskrivning", 
+    "memberCount": "Antal medlemmar",
+    "recipients": "Mottagare",
+    "selectGroupPrompt": "Välj en grupp för att se detaljer",
+    "confirmTitle": "Bekräfta sändning",
+    "confirmMessage": "Du håller på att skicka ett meddelande till {{count}} mottagare i gruppen \"{{group}}\".",
+    "confirmButton": "Skicka",
+    "cancelButton": "Avbryt",
+    "success": "Meddelanden skickade",
+    "error": "Kunde inte skicka meddelanden",
+    "errors": {
+      "noGroup": "Välj en grupp",
+      "noMessage": "Meddelandet får inte vara tomt",
+      "noScheduleTime": "Välj en schemalagd tid",
+      "noSenderId": "Välj ett avsändar-ID",
+      "invalidDate": "Ogiltigt datumformat"
+    }
   }
 }

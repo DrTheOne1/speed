@@ -14,6 +14,13 @@ interface TranslationContextType {
   direction: 'ltr' | 'rtl';
 }
 
+// Debug: Log the imported translations
+console.log('Imported translations:', {
+  en: enTranslations,
+  sv: svTranslations,
+  ar: arTranslations
+});
+
 const translations = {
   en: enTranslations,
   sv: svTranslations,
@@ -40,29 +47,39 @@ export const TranslationProvider = ({ children }: { children: React.ReactNode })
       
       // Try to get translation from current language
       let result: any = translations[language];
-      for (const k of keys) {
-        if (!result || typeof result !== 'object') {
-          result = undefined;
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        if (!result) {
           break;
         }
         result = result[k];
+        // If we're at a string value but not at the last key, the path is invalid
+        if (typeof result === 'string' && i < keys.length - 1) {
+          result = undefined;
+          break;
+        }
       }
       
       // If not found, try English
       if (result === undefined && language !== 'en') {
         result = translations.en;
-        for (const k of keys) {
-          if (!result || typeof result !== 'object') {
-            result = undefined;
+        for (let i = 0; i < keys.length; i++) {
+          const k = keys[i];
+          if (!result) {
             break;
           }
           result = result[k];
+          // If we're at a string value but not at the last key, the path is invalid
+          if (typeof result === 'string' && i < keys.length - 1) {
+            result = undefined;
+            break;
+          }
         }
       }
       
       // If still not found, log a warning and return the key
       if (result === undefined) {
-        console.warn(`Translation not found: ${key}`); // Add this line to debug
+        console.warn(`Translation not found: ${key}`);
         return key.split('.').pop() || key;
       }
       
@@ -84,10 +101,10 @@ export const TranslationProvider = ({ children }: { children: React.ReactNode })
   };
 
   // Get text direction based on language
-  const direction = language === 'ar' ? 'rtl' : 'ltr';
+  const direction: 'ltr' | 'rtl' = language === 'ar' ? 'rtl' : 'ltr';
 
   // Context value
-  const value = {
+  const value: TranslationContextType = {
     language,
     setLanguage,
     t,

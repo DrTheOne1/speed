@@ -5,12 +5,11 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { Clock, Send, Users, Plus, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { classNames } from '../utils/classNames';
-import { useCredits } from '../hooks/useCredits';
 
 interface SendGroupMessageFormData {
   message: string;
   scheduled: boolean;
-  scheduleTime?: Date | undefined;
+  scheduleTime?: Date;
 }
 
 interface Group {
@@ -32,7 +31,6 @@ interface GroupWithMembers extends Group {
 
 export default function SendGroupMessages() {
   const { t, language, direction } = useTranslation();
-  const { credits, loading: creditsLoading, deductCredits } = useCredits();
   const [formData, setFormData] = useState<SendGroupMessageFormData>({
     message: '',
     scheduled: false,
@@ -269,6 +267,24 @@ export default function SendGroupMessages() {
     return invalidContacts;
   };
 
+  // Add this query near the beginning of your component, after other useQuery hooks
+  const { data: userData, refetch: refetchUserData } = useQuery({
+    queryKey: ['user-credits'],
+    queryFn: async () => {
+      if (!userId) return null;
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('credits')
+        .eq('id', userId)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId
+  });
+
   // Send SMS mutation
   const sendSMSMutation = useMutation({
     mutationFn: async (data: SendGroupMessageFormData) => {
@@ -283,10 +299,10 @@ export default function SendGroupMessages() {
           throw new Error('Authentication error: Please log in again');
         }
 
-        // Get user details including gateway_id
+        // Get user details including gateway_id and credits
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('gateway_id')
+          .select('gateway_id, credits')
           .eq('id', session.user.id)
           .single();
 
@@ -298,10 +314,14 @@ export default function SendGroupMessages() {
           throw new Error('No gateway configured for your account');
         }
 
+        if (!userData.credits || userData.credits <= 0) {
+          throw new Error('Insufficient credits to send messages');
+        }
+
         // Calculate required credits based on message segments and number of recipients
         const requiredCredits = messageSegments * groupContacts.length;
-        if (requiredCredits > credits) {
-          throw new Error(`Insufficient credits. Required: ${requiredCredits}, Available: ${credits}`);
+        if (requiredCredits > userData.credits) {
+          throw new Error(`Insufficient credits. Required: ${requiredCredits}, Available: ${userData.credits}`);
         }
 
         const minutesFromNow = data.scheduleTime 
@@ -378,28 +398,25 @@ export default function SendGroupMessages() {
                 })
                 .eq('id', messageData.id);
 
-            } catch (error: unknown) {
+            } catch (error) {
               console.error(`Error sending message ${messageData.id}:`, error);
-              
+
               // Mark as failed with error message
               await supabase
                 .from('messages')
                 .update({ 
                   status: 'failed',
-                  error_message: error instanceof Error ? error.message : 'Unknown error occurred'
+                  error_message: error.message 
                 })
                 .eq('id', messageData.id);
             }
           }
         }
         
-        // After successful message sending, deduct credits
-        await deductCredits(requiredCredits);
-        
         return true;
-      } catch (error: unknown) {
+      } catch (error) {
         console.error('Error in sendSMSMutation:', error);
-        throw error instanceof Error ? error : new Error('Unknown error occurred');
+        throw error;
       }
     },
     onSuccess: () => {
@@ -410,6 +427,7 @@ export default function SendGroupMessages() {
       });
       setSelectedGroup(null);
       setGroupContacts([]);
+      refetchUserData(); // Refresh the credits data
     },
     onError: (error: Error) => {
       console.error('Error sending messages:', error);
@@ -486,32 +504,6 @@ export default function SendGroupMessages() {
     }
   };
 
-  // Update the schedule time handler
-  const handleScheduleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      const dateValue = e.target.value ? new Date(e.target.value) : undefined;
-      setFormData({...formData, scheduleTime: dateValue});
-    } catch (err) {
-      console.error("Invalid date format:", err);
-      toast.error(t('sendGroupMessages.errors.invalidDate'));
-    }
-  };
-
-  // Update the scheduled messages query
-  const processScheduledMessages = async () => {
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('messages')
-      .update({ status: 'processing' })
-      .eq('status', 'pending')
-      .eq('scheduled_for', now);
-      
-    if (error) {
-      console.error('Error processing scheduled messages:', error);
-      toast.error(t('sendGroupMessages.errors.processScheduled'));
-    }
-  };
-
   return (
     <div className={`container mx-auto px-4 py-8 ${direction}`} key={`group-messages-container-${language}`}>
       <div className="flex justify-between items-center mb-6">
@@ -522,11 +514,11 @@ export default function SendGroupMessages() {
         <div className="bg-white py-2 px-4 rounded-full shadow border border-gray-200 flex items-center">
           <CreditCard className="h-5 w-5 text-indigo-600 mr-2" />
           <span className="font-medium">
-            {creditsLoading 
-              ? t('dashboard.credits.loading')
-              : `${t('dashboard.credits.title')}: ${credits}`}
+            {userData?.credits !== undefined 
+              ? `${t('dashboard.credits.title')}: ${userData.credits}`
+              : t('dashboard.credits.loading')}
           </span>
-          {credits <= 50 && (
+          {(userData?.credits || 0) < 50 && (
             <span className="ml-2 text-amber-600">
               ({t('dashboard.credits.low')})
             </span>
@@ -771,7 +763,15 @@ export default function SendGroupMessages() {
                     type="datetime-local"
                     id="scheduleTime"
                     name="scheduleTime"
-                    onChange={handleScheduleTimeChange}
+                    onChange={e => {
+                      try {
+                        const dateValue = e.target.value ? new Date(e.target.value) : null;
+                        setFormData({...formData, scheduleTime: dateValue});
+                      } catch (err) {
+                        console.error("Invalid date format:", err);
+                        toast.error(t('sendGroupMessages.errors.invalidDate'));
+                      }
+                    }}
                     className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                   />
                 </div>
@@ -872,3 +872,12 @@ export default function SendGroupMessages() {
     </div>
   );
 }
+
+// Modify your Edge Function to use this for comparison
+const now = new Date().toISOString();
+const { data, error } = await supabase
+  .from('messages')
+  .select('*')
+  .eq('status', 'pending')
+  .not('scheduled_for', 'is', null)
+  .lte('scheduled_for', now);

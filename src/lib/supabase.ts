@@ -5,30 +5,49 @@ import { Database } from '../types/supabase';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debugging environment variables
-console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL || 'Missing URL');
-console.log('Supabase Anon Key status:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+// Debug environment variables
+console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing');
+console.log('Supabase Key:', supabaseAnonKey ? 'Present' : 'Missing');
 
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing required Supabase environment variables. Please check your .env file.');
 }
 
-// Initialize Supabase client with retry logic
+// Initialize Supabase client with retry logic and proper headers
 export const supabase = createClient<Database>(
-  supabaseUrl || '',
-  supabaseAnonKey || '',
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
+    db: {
+      schema: 'public'
+    },
     global: {
-      fetch: (...args) => fetch(...args) // Override with your retry logic if needed
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=minimal'
+      }
     }
   }
 );
+
+// Add error handling for database operations
+export const handleSupabaseError = (error: any) => {
+  console.error('Supabase error:', error);
+  if (error.code === 'PGRST116') {
+    return 'Authentication error. Please log in again.';
+  }
+  if (error.code === '42501') {
+    return 'Permission denied. Please check your access rights.';
+  }
+  return 'An error occurred while accessing the database.';
+};
 
 // Test connection
 const testConnection = async () => {

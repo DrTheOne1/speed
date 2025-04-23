@@ -565,11 +565,9 @@ export default function ImportContacts() {
     try {
       console.log('Inspecting database schema...');
 
-      // Get all tables
+      // Get all tables using the correct RPC call
       const { data: tables, error: tablesError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public');
+        .rpc('get_tables');
 
       if (tablesError) {
         console.error('Error fetching tables:', tablesError);
@@ -578,20 +576,20 @@ export default function ImportContacts() {
 
       console.log('Tables in database:', tables);
 
-      // Get columns for each table
+      // Get columns for each table using the correct RPC call
       for (const table of tables || []) {
+        // Make sure we're using the table name string, not the whole object
+        const tableName = typeof table === 'object' ? table.name : table;
+        
         const { data: columns, error: columnsError } = await supabase
-          .from('information_schema.columns')
-          .select('column_name, data_type, is_nullable')
-          .eq('table_schema', 'public')
-          .eq('table_name', table.table_name);
+          .rpc('get_columns', { table_name: tableName });
 
         if (columnsError) {
-          console.error(`Error fetching columns for ${table.table_name}:`, columnsError);
+          console.error(`Error fetching columns for ${tableName}:`, columnsError);
           continue;
         }
 
-        console.log(`Columns in ${table.table_name}:`, columns);
+        console.log(`Columns in ${tableName}:`, columns);
       }
     } catch (error) {
       console.error('Error inspecting schema:', error);
@@ -607,6 +605,45 @@ export default function ImportContacts() {
     setSelectedGroup(groupId);
     localStorage.setItem('lastSelectedGroup', groupId);
     setIsGroupDropdownOpen(false);
+  };
+
+  // Add this function to fetch user data
+  const fetchUserData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No user found');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('No user data found, creating new user record');
+          // Create new user record
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert([{ id: user.id, email: user.email }]);
+          
+          if (insertError) {
+            console.error('Error creating user record:', insertError);
+          }
+        } else {
+          console.error('Error fetching user data:', error);
+        }
+        return;
+      }
+
+      console.log('User data:', data);
+    } catch (error) {
+      console.error('Error in fetchUserData:', error);
+    }
   };
 
   return (

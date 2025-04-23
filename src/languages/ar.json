@@ -3,9 +3,10 @@
     "title": "تسجيل الدخول",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
-    "submit": "تسجيل الدخول",
+    "submit": "دخول",
     "remember": "تذكرني",
-    "forgot": "نسيت كلمة المرور؟"
+    "forgot": "نسيت كلمة المرور؟",
+    "register": "ليس لديك حساب؟ سجل الآن"
   },
   "send": {
     "title": "إرسال رسالة",
@@ -16,21 +17,23 @@
     }
   },
   "sendSMS": {
-    "title": "إرسال رسالة قصيرة",
+    "title": "إرسال رسالة نصية",
     "recipientLabel": "المستلم",
     "recipientPlaceholder": "أدخل رقم الهاتف",
     "messageLabel": "الرسالة",
-    "messagePlaceholder": "اكتب رسالتك هنا",
+    "messagePlaceholder": "أدخل رسالتك",
     "charactersRemaining": "{{count}} حرف متبقي",
-    "messageWillBeSplit": "سيتم تقسيم الرسالة إلى {{count}} رسائل",
+    "messageWillBeSplit": "سيتم تقسيم الرسالة إلى {{count}} أجزاء",
+    "messagePoints": "{{points}} نقطة",
     "sendButton": "إرسال الرسالة",
     "sendingButton": "جاري الإرسال...",
     "selectContacts": "اختر من جهات الاتصال",
     "scheduleSend": "جدولة الإرسال",
-    "now": "الآن",
-    "schedule": "جدولة",
-    "scheduledFor": "مجدولة في",
-    "templates": "قوالب",
+    "templatesTitle": "قوالب الرسائل",
+    "scheduleNow": "إرسال الآن",
+    "scheduleLater": "جدولة لاحقاً",
+    "scheduledFor": "مجدول في",
+    "templates": "القوالب",
     "useTemplate": "استخدم قالب",
     "success": "تم إرسال الرسالة بنجاح",
     "error": "فشل في إرسال الرسالة",
@@ -42,25 +45,24 @@
     },
     "confirmation": {
       "title": "تأكيد الإرسال",
-      "message": "إرسال رسالة قصيرة إلى {{recipient}}؟",
+      "message": "هل أنت متأكد من إرسال هذه الرسالة؟",
       "cost": "سيستخدم هذا {{count}} رصيد",
       "confirm": "إرسال",
       "cancel": "إلغاء"
-    },
-    "templatesTitle": "قوالب"
+    }
   },
   "billing": {
     "title": "الفواتير والاشتراكات",
-    "description": "اختر الخطة التي تناسب احتياجاتك",
+    "description": "اختر الاشتراك الذي يناسب احتياجاتك",
     "usage": {
       "title": "الاستخدام الحالي",
       "description": "مراقبة اشتراكك الحالي واستخدام الرصيد"
     },
-    "currentPlan": "الخطة الحالية",
+    "currentPlan": "الاشتراك الحالي",
     "creditsLeft": "الرصيد المتبقي",
-    "nextBilling": "الفاتورة القادمة",
-    "availablePlans": "الخطط المتاحة",
-    "loadingPlans": "جاري تحميل الخطط...",
+    "nextBilling": "الفواتير القادمة",
+    "availablePlans": "الاشتراكات المتاحة",
+    "loadingPlans": "جاري تحميل الاشتراكات...",
     "subscribe": "اشترك",
     "billingHistory": "سجل الفواتير",
     "history": {
@@ -70,8 +72,8 @@
       "status": "الحالة"
     },
     "payment": {
-      "redirecting": "جاري التحويل إلى صفحة الدفع...",
-      "failed": "فشلت عملية الدفع"
+      "redirecting": "جاري التوجيه إلى صفحة الدفع...",
+      "failed": "فشل الدفع"
     },
     "features": {
       "unlimited_messages": "رسائل غير محدودة",
@@ -81,14 +83,17 @@
       "custom_sender": "اسم مرسل مخصص",
       "scheduled_messages": "رسائل مجدولة",
       "bulk_sending": "إرسال جماعي",
-      "delivery_reports": "تقارير التوصيل",
+      "delivery_reports": "تقارير التسليم",
       "sms_templates": "قوالب الرسائل",
-      "contact_groups": "مجموعات جهات الاتصال"
+      "contact_groups": "مجموعات الاتصال"
     },
     "billing_cycle": {
-      "monthly": "شهرياً",
-      "yearly": "سنوياً",
+      "monthly": "شهري",
+      "yearly": "سنوي",
       "quarterly": "ربع سنوي"
+    },
+    "errors": {
+      "loadingFailed": "فشل تحميل الاشتراكات"
     }
   },
   "subscription_plans": {
@@ -108,33 +113,38 @@
   "dashboard": {
     "title": "لوحة التحكم",
     "welcome": "مرحبًا بعودتك، {{name}}",
-    "summary": "ملخص الحساب",
+    "summary": "نظرة عامة على الحساب",
+    "stats": {
+      "title": "الإحصائيات",
+      "messages": "الرسائل",
+      "contacts": "جهات الاتصال",
+      "credits": "الرصيد",
+      "sent": "الرسائل المرسلة",
+      "delivered": "الرسائل المستلمة",
+      "failed": "فشل في تحميل الإحصائيات"
+    },
     "credits": {
       "title": "الرصيد المتاح",
       "remaining": "{{count}} رصيد متبقي",
-      "low": "رصيدك ينخفض"
-    },
-    "activity": {
-      "title": "النشاطات الأخيرة",
-      "empty": "لا توجد نشاطات حديثة",
-      "seeAll": "عرض كل النشاطات"
-    },
-    "stats": {
-      "title": "الأداء",
-      "sent": "الرسائل المرسلة",
-      "delivered": "معدل التوصيل",
-      "failed": "فشل الإرسال"
+      "low": "رصيدك منخفض",
+      "available": "الرصيد المتاح",
+      "loading": "جاري تحميل الرصيد..."
     },
     "quickActions": {
       "title": "إجراءات سريعة",
       "send": "إرسال رسالة",
-      "contacts": "إدارة جهات الاتصال",
-      "templates": "قوالب الرسائل",
-      "billing": "الفواتير والاشتراك"
+      "contacts": "جهات الاتصال",
+      "templates": "القوالب",
+      "billing": "الفواتير"
+    },
+    "activity": {
+      "title": "النشاط الأخير",
+      "seeAll": "عرض الكل",
+      "empty": "لا يوجد نشاط حديث"
     },
     "alerts": {
-      "title": "الإشعارات",
-      "empty": "لا توجد إشعارات جديدة"
+      "title": "التنبيهات",
+      "empty": "لا توجد تنبيهات"
     }
   },
   "navigation": {
@@ -147,97 +157,441 @@
     "billing": "الفواتير",
     "settings": "الإعدادات",
     "help": "المساعدة والدعم",
-    "logout": "تسجيل الخروج"
-  },
-  "messages": {
-    "title": "الرسائل",
-    "inbox": "صندوق الوارد",
-    "sent": "المرسلة",
-    "scheduled": "المجدولة",
-    "draft": "المسودات",
-    "search": "بحث في الرسائل",
-    "noMessages": "لم يتم العثور على رسائل",
-    "loadingMessages": "جاري تحميل الرسائل...",
-    "filter": "تصفية الرسائل",
-    "sortBy": "ترتيب حسب",
-    "date": "التاريخ",
-    "status": "الحالة",
-    "recipient": "المستلم",
-    "actions": "إجراءات",
-    "view": "عرض",
-    "delete": "حذف",
-    "resend": "إعادة إرسال",
-    "messageDetails": "تفاصيل الرسالة",
-    "deliveryStatus": {
-      "delivered": "تم التسليم",
-      "sent": "تم الإرسال",
-      "failed": "فشل",
-      "pending": "قيد الانتظار",
-      "scheduled": "مجدول"
-    },
-    "deleteConfirm": "هل أنت متأكد أنك تريد حذف هذه الرسالة؟",
-    "messageSent": "تم إرسال الرسالة في",
-    "messageScheduled": "مجدولة في",
-    "viewAll": "عرض كل الرسائل",
-    "navigation": {
-      "tabs": {
-        "inbox": "صندوق الوارد",
-        "sent": "المرسلة",
-        "scheduled": "المجدولة",
-        "draft": "المسودات"
-      }
-    },
-    "table": {
-      "header": {
-        "date": "التاريخ",
-        "recipient": "المستلم",
-        "status": "الحالة",
-        "actions": "إجراءات"
-      }
-    }
+    "logout": "تسجيل الخروج",
+    "messaging": "الرسائل",
+    "bulkSend": "إرسال جماعي",
+    "scheduled": "الرسائل المجدولة",
+    "messages": "الرسائل",
+    "allContacts": "جميع جهات الاتصال",
+    "groups": "المجموعات",
+    "import": "استيراد",
+    "reports": "التقارير",
+    "usage": "الاستخدام",
+    "adminDashboard": "لوحة تحكم المسؤول",
+    "userManagement": "إدارة المستخدمين",
+    "gatewayManagement": "إدارة البوابات",
+    "gatewayRoutes": "مسارات البوابة",
+    "gatewayLogs": "سجلات البوابة",
+    "testSMS": "اختبار الرسائل",
+    "paymentMethods": "طرق الدفع",
+    "subscriptionPlans": "خطط الاشتراك",
+    "sendGroupMessages": "إرسال رسائل للمجموعات"
   },
   "bulkSend": {
-    "title": "إرسال جماعي",
-    "description": "إرسال رسائل إلى عدة مستلمين",
+    "title": "إرسال رسائل جماعي",
+    "description": "إرسال رسائل SMS إلى عدة مستلمين",
     "uploadSection": {
-      "title": "تحميل المستلمين",
-      "description": "قم بتحميل ملف CSV أو الصق الأرقام",
-      "dragDrop": "اسحب وأفلت ملف CSV هنا أو",
-      "browse": "تصفح الملفات",
+      "title": "رفع المستلمين",
+      "description": "قم برفع ملف CSV يحتوي على أرقام الهواتف",
+      "dragDrop": "اسحب وأفلت ملف CSV هنا، أو",
+      "browse": "تصفح",
       "paste": "الصق الأرقام",
-      "template": "تحميل النموذج"
+      "template": "تحميل القالب"
     },
     "messageSection": {
-      "title": "محتوى الرسالة",
+      "title": "الرسالة",
       "placeholder": "اكتب رسالتك هنا",
-      "variables": "المتغيرات المتاحة",
+      "variables": "إدراج متغيرات",
       "preview": "معاينة الرسالة"
     },
-    "recipientCount": "{{count}} مستلم",
-    "estimatedCost": "التكلفة المقدرة: {{credits}} رصيد",
     "schedule": {
-      "title": "جدولة التسليم",
+      "title": "جدولة",
       "now": "إرسال الآن",
-      "later": "جدولة لوقت لاحق",
-      "datetime": "اختر التاريخ والوقت"
+      "later": "جدولة لوقت لاحق"
     },
-    "submit": "إرسال الرسائل",
-    "sending": "جاري الإرسال...",
+    "templates": {
+      "title": "القوالب",
+      "download": "تحميل القالب"
+    },
     "validation": {
       "messageRequired": "الرسالة مطلوبة",
-      "messageLength": "يجب أن تكون الرسالة أقل من 160 حرفًا",
-      "fileRequired": "الرجاء تحديد ملف CSV",
-      "invalidFormat": "تنسيق ملف غير صالح. يرجى استخدام CSV",
-      "invalidPhone": "تنسيق رقم الهاتف غير صالح"
+      "messageLength": "يجب أن تكون الرسالة أقل من 160 حرفاً",
+      "fileRequired": "الرجاء اختيار ملف CSV",
+      "invalidFormat": "تنسيق ملف غير صالح. الرجاء استخدام CSV"
     },
     "success": {
-      "scheduled": "تمت جدولة الرسائل بنجاح!",
-      "uploaded": "تم رفع الملف بنجاح"
+      "scheduled": "تمت جدولة الرسائل بنجاح"
     },
     "error": {
-      "generic": "فشل في إرسال الرسائل. حاول مرة أخرى.",
-      "upload": "فشل في رفع الملف",
-      "processing": "خطأ في معالجة الملف"
+      "generic": "فشل إرسال الرسائل. الرجاء المحاولة مرة أخرى.",
+      "fileRequired": "الرجاء اختيار ملف CSV",
+      "invalidFormat": "تنسيق ملف غير صالح. الرجاء استخدام CSV"
+    },
+    "sending": "جاري الإرسال...",
+    "submit": "إرسال الرسائل"
+  },
+  "scheduled": {
+    "title": "الرسائل المجدولة",
+    "description": "عرض وإدارة الرسائل المجدولة الخاصة بك",
+    "listSection": {
+      "title": "الرسائل المجدولة",
+      "description": "عرض وإدارة الرسائل المجدولة الخاصة بك",
+      "empty": "لا توجد رسائل مجدولة",
+      "table": {
+        "recipient": "المستلم",
+        "message": "الرسالة",
+        "scheduledFor": "مجدولة في",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      }
+    },
+    "messageSection": {
+      "title": "تفاصيل الرسالة",
+      "recipient": "المستلم",
+      "message": "الرسالة",
+      "schedule": "الجدولة",
+      "status": "الحالة"
+    },
+    "schedule": {
+      "title": "الجدولة",
+      "now": "إرسال الآن",
+      "later": "جدولة لوقت لاحق",
+      "date": "اختر التاريخ",
+      "time": "اختر الوقت"
+    },
+    "status": {
+      "scheduled": "مجدولة",
+      "sent": "تم الإرسال",
+      "failed": "فشل الإرسال",
+      "cancelled": "ملغاة"
+    },
+    "actions": {
+      "cancel": "إلغاء",
+      "reschedule": "إعادة الجدولة",
+      "view": "عرض التفاصيل",
+      "edit": "تعديل الرسالة"
+    },
+    "validation": {
+      "dateRequired": "التاريخ مطلوب",
+      "timeRequired": "الوقت مطلوب",
+      "messageRequired": "الرسالة مطلوبة",
+      "recipientRequired": "المستلم مطلوب"
+    },
+    "success": {
+      "scheduled": "تمت جدولة الرسالة بنجاح",
+      "cancelled": "تم إلغاء الرسالة بنجاح",
+      "rescheduled": "تمت إعادة جدولة الرسالة بنجاح"
+    },
+    "error": {
+      "generic": "فشل معالجة الرسالة. الرجاء المحاولة مرة أخرى.",
+      "cancel": "فشل إلغاء الرسالة",
+      "reschedule": "فشل إعادة جدولة الرسالة"
+    },
+    "filters": {
+      "title": "تصفية الرسائل",
+      "all": "جميع الرسائل",
+      "upcoming": "القادمة",
+      "past": "السابقة",
+      "status": "تصفية حسب الحالة"
+    },
+    "search": {
+      "placeholder": "البحث عن المستلم أو الرسالة"
     }
+  },
+  "messages": {
+    "title": "سجل الرسائل",
+    "description": "عرض سجل الرسائل وحالة التسليم",
+    "listSection": {
+      "title": "الرسائل",
+      "empty": "لم يتم العثور على رسائل",
+      "table": {
+        "recipient": "المستلم",
+        "message": "الرسالة",
+        "sentAt": "تاريخ الإرسال",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      }
+    },
+    "messageSection": {
+      "title": "تفاصيل الرسالة",
+      "recipient": "المستلم",
+      "message": "الرسالة",
+      "sentAt": "تاريخ الإرسال",
+      "status": "الحالة",
+      "close": "إغلاق"
+    },
+    "status": {
+      "sent": "تم الإرسال",
+      "delivered": "تم التسليم",
+      "failed": "فشل",
+      "scheduled": "مجدول",
+      "cancelled": "ملغي"
+    },
+    "filters": {
+      "all": "جميع الرسائل",
+      "sent": "مرسلة",
+      "delivered": "تم تسليمها",
+      "failed": "فشلت",
+      "scheduled": "مجدولة",
+      "cancelled": "ملغية"
+    },
+    "search": {
+      "placeholder": "البحث عن المستلم أو الرسالة"
+    },
+    "actions": {
+      "view": "عرض",
+      "resend": "إعادة إرسال",
+      "cancel": "إلغاء"
+    },
+    "confirmation": {
+      "resend": {
+        "title": "إعادة إرسال الرسالة",
+        "message": "هل أنت متأكد من إعادة إرسال هذه الرسالة؟",
+        "confirm": "إعادة إرسال",
+        "cancel": "إلغاء"
+      },
+      "cancel": {
+        "title": "إلغاء الرسالة",
+        "message": "هل أنت متأكد من إلغاء هذه الرسالة؟",
+        "confirm": "إلغاء",
+        "cancel": "الاحتفاظ"
+      }
+    },
+    "export": {
+      "success": "تم تصدير البيانات بنجاح",
+      "error": "فشل تصدير الرسائل",
+      "button": "تصدير الرسائل"
+    },
+    "loading": "جاري تحميل الرسائل...",
+    "error": "فشل تحميل الرسائل"
+  },
+  "contacts": {
+    "title": "جهات الاتصال",
+    "description": "إدارة جهات الاتصال والمجموعات",
+    "listSection": {
+      "title": "جهات الاتصال",
+      "empty": "لم يتم العثور على جهات اتصال",
+      "table": {
+        "name": "الاسم",
+        "phone": "الهاتف",
+        "group": "المجموعة",
+        "actions": "الإجراءات"
+      }
+    },
+    "form": {
+      "title": "إضافة جهة اتصال",
+      "editTitle": "تعديل جهة اتصال",
+      "name": "الاسم",
+      "phone": "رقم الهاتف",
+      "group": "المجموعة",
+      "save": "حفظ جهة الاتصال",
+      "cancel": "إلغاء"
+    },
+    "groups": {
+      "title": "مجموعات جهات الاتصال",
+      "description": "إدارة مجموعات جهات الاتصال للرسائل الجماعية",
+      "empty": "لم يتم العثور على مجموعات",
+      "add": "إضافة مجموعة",
+      "edit": "تعديل المجموعة",
+      "delete": "حذف المجموعة",
+      "name": "اسم المجموعة",
+      "description": "الوصف",
+      "members": "الأعضاء",
+      "memberCount": "{{count}} عضو",
+      "save": "حفظ المجموعة",
+      "cancel": "إلغاء",
+      "success": {
+        "added": "تمت إضافة المجموعة بنجاح",
+        "updated": "تم تحديث المجموعة بنجاح",
+        "deleted": "تم حذف المجموعة بنجاح"
+      },
+      "error": {
+        "title": "خطأ",
+        "add": "فشل إضافة المجموعة",
+        "update": "فشل تحديث المجموعة",
+        "delete": "فشل حذف المجموعة"
+      }
+    },
+    "actions": {
+      "add": "إضافة جهة اتصال",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "view": "عرض"
+    },
+    "validation": {
+      "nameRequired": "الاسم مطلوب",
+      "phoneRequired": "رقم الهاتف مطلوب",
+      "invalidPhone": "صيغة رقم الهاتف غير صالحة",
+      "groupRequired": "المجموعة مطلوبة"
+    },
+    "confirmation": {
+      "delete": {
+        "title": "حذف جهة اتصال",
+        "message": "هل أنت متأكد من حذف هذه جهة الاتصال؟",
+        "confirm": "حذف",
+        "cancel": "إلغاء"
+      },
+      "deleteGroup": {
+        "title": "حذف مجموعة",
+        "message": "هل أنت متأكد من حذف هذه المجموعة؟ سيتم نقل جميع جهات الاتصال في هذه المجموعة إلى المجموعة الافتراضية.",
+        "confirm": "حذف",
+        "cancel": "إلغاء"
+      }
+    },
+    "success": {
+      "added": "تمت إضافة جهة الاتصال بنجاح",
+      "updated": "تم تحديث جهة الاتصال بنجاح",
+      "deleted": "تم حذف جهة الاتصال بنجاح",
+      "groupAdded": "تمت إضافة المجموعة بنجاح",
+      "groupUpdated": "تم تحديث المجموعة بنجاح",
+      "groupDeleted": "تم حذف المجموعة بنجاح"
+    },
+    "error": {
+      "add": "فشل إضافة جهة الاتصال",
+      "update": "فشل تحديث جهة الاتصال",
+      "delete": "فشل حذف جهة الاتصال",
+      "groupAdd": "فشل إضافة المجموعة",
+      "groupUpdate": "فشل تحديث المجموعة",
+      "groupDelete": "فشل حذف المجموعة"
+    },
+    "import": {
+      "title": "استيراد جهات الاتصال",
+      "description": "استيراد جهات الاتصال من ملف CSV أو إدخال أرقام الهواتف يدويًا",
+      "manual": {
+        "title": "استيراد يدوي",
+        "description": "أدخل أرقام الهواتف مباشرة مع أو بدون رمز الدولة",
+        "country": "رمز الدولة",
+        "group": "تعيين إلى مجموعة",
+        "noGroup": "لا توجد مجموعة",
+        "numbers": "أرقام الهواتف",
+        "placeholder": "أدخل رقم هاتف واحد في كل سطر\nمثال:\n0700506180\n+46700506180\n0046700506180",
+        "format": "أدخل رقم هاتف واحد في كل سطر. يمكن إدخال الأرقام مع أو بدون رمز الدولة. سيقوم النظام بتنسيقها تلقائيًا بشكل صحيح.",
+        "count": "عدد جهات الاتصال للاستيراد"
+      },
+      "template": {
+        "title": "تحميل القالب",
+        "description": "قم بتحميل قالب CSV الخاص بنا لضمان تنسيق قائمة جهات الاتصال بشكل صحيح",
+        "button": "تحميل القالب"
+      },
+      "upload": {
+        "title": "رفع جهات الاتصال",
+        "description": "قم برفع ملف CSV الخاص بجهات الاتصال",
+        "instructions": "انقر للرفع أو اسحب وأفلت",
+        "fileType": "ملفات CSV فقط",
+        "importing": "جاري الاستيراد...",
+        "import": "استيراد جهات الاتصال",
+        "success": "تم استيراد جهات الاتصال بنجاح!",
+        "error": "تعذر استيراد جهات الاتصال"
+      },
+      "error": {
+        "empty": "الرجاء إدخال رقم هاتف واحد على الأقل",
+        "invalid": "تنسيق رقم الهاتف غير صالح"
+      },
+      "progress": {
+        "uploaded": "{{filename}}",
+        "percentage": "{{percentage}}%"
+      }
+    }
+  },
+  "templates": {
+    "title": "قوالب الرسائل",
+    "description": "إنشاء وإدارة قوالب الرسائل الخاصة بك",
+    "add": {
+      "button": "إضافة قالب",
+      "title": "اسم القالب",
+      "content": "محتوى الرسالة",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "success": "تمت إضافة القالب بنجاح",
+      "error": "فشل إضافة القالب"
+    },
+    "table": {
+      "name": "الاسم",
+      "content": "المحتوى",
+      "actions": "الإجراءات"
+    },
+    "delete": {
+      "button": "حذف",
+      "success": "تم حذف القالب بنجاح",
+      "error": "فشل حذف القالب"
+    },
+    "edit": {
+      "button": "تعديل"
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "accountInfo": {
+      "title": "معلومات الحساب",
+      "description": "إدارة إعدادات وتفضيلات حسابك",
+      "email": "البريد الإلكتروني",
+      "credits": "الرصيد المتاح"
+    },
+    "actions": {
+      "save": "حفظ التغييرات",
+      "saving": "جاري الحفظ..."
+    },
+    "messages": {
+      "updateError": "فشل تحديث الإعدادات"
+    }
+  },
+  "auth": {
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "resetPasswordInstructions": "أدخل بريدك الإلكتروني وسنرسل لك تعليمات إعادة تعيين كلمة المرور",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "name": "الاسم",
+    "phone": "رقم الهاتف",
+    "sendResetInstructions": "إرسال تعليمات إعادة التعيين",
+    "sending": "جاري الإرسال...",
+    "backToLogin": "العودة إلى تسجيل الدخول",
+    "createAccount": "إنشاء حساب",
+    "resetPasswordSuccess": "تم إرسال تعليمات إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+    "activationSuccess": "تم تفعيل حسابك بنجاح",
+    "activationError": "فشل في تفعيل الحساب",
+    "resendVerification": "إعادة إرسال رابط التحقق",
+    "resendVerificationSuccess": "تم إرسال رابط التحقق بنجاح",
+    "resendVerificationError": "فشل في إرسال رابط التحقق",
+    "register": {
+      "title": "إنشاء حساب جديد",
+      "description": "أدخل معلوماتك لإنشاء حساب",
+      "submit": "إنشاء حساب",
+      "success": "تم إنشاء حسابك بنجاح! يرجى التحقق من بريدك الإلكتروني",
+      "error": "فشل في إنشاء الحساب",
+      "alreadyHaveAccount": "لديك حساب بالفعل؟",
+      "signIn": "تسجيل الدخول",
+      "validation": {
+        "nameRequired": "الاسم مطلوب",
+        "emailRequired": "البريد الإلكتروني مطلوب",
+        "emailInvalid": "البريد الإلكتروني غير صالح",
+        "passwordRequired": "كلمة المرور مطلوبة",
+        "passwordMinLength": "كلمة المرور يجب أن تكون على الأقل 8 أحرف",
+        "passwordMismatch": "كلمات المرور غير متطابقة",
+        "phoneRequired": "رقم الهاتف مطلوب",
+        "phoneInvalid": "رقم الهاتف غير صالح"
+      }
+    }
+  },
+  "sendGroupMessages": {
+    "title": "إرسال رسائل جماعية",
+    "groupLabel": "اختر مجموعة",
+    "selectGroup": "اختر مجموعة",
+    "messageLabel": "الرسالة",
+    "messagePlaceholder": "اكتب رسالتك هنا...",
+    "charactersRemaining": "{{count}} حرف متبقي",
+    "messageWillBeSplit": "سيتم تقسيم الرسالة إلى {{count}} أجزاء",
+    "messagePoints": "{{points}} نقطة",
+    "scheduleNow": "إرسال الآن",
+    "scheduleLater": "جدولة لاحقاً",
+    "scheduledFor": "مجدول لـ",
+    "sendButton": "إرسال الرسالة",
+    "success": "تم إرسال الرسائل بنجاح",
+    "error": "فشل في إرسال الرسائل",
+    "error.noGroup": "الرجاء اختيار مجموعة",
+    "error.noMessage": "الرجاء إدخال رسالة",
+    "error.noScheduleTime": "الرجاء اختيار وقت الجدولة",
+    "confirmTitle": "تأكيد الإرسال",
+    "confirmMessage": "هل أنت متأكد أنك تريد إرسال هذه الرسالة إلى {{group}} ({{count}} مستلم)؟",
+    "cancelButton": "إلغاء",
+    "confirmButton": "تأكيد",
+    "groupInfo": "معلومات المجموعة",
+    "groupName": "اسم المجموعة",
+    "groupDescription": "الوصف",
+    "memberCount": "عدد الأعضاء",
+    "recipients": "المستلمون",
+    "members": "أعضاء",
+    "selectGroupPrompt": "اختر مجموعة لعرض التفاصيل",
+    "senderLabel": "اختر معرف المرسل"
   }
 }
