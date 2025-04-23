@@ -17,5 +17,13 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    target: 'esnext',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
   }
 }) 
